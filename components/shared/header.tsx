@@ -47,7 +47,15 @@ export const Header = () => {
     : "U";
 
   useEffect(() => {
+    if (loading) return; // Wait for auth to initialize
+
     const fetchAdminProfile = async () => {
+      if (!user) {
+        console.log("No authenticated user, skipping admin profile fetch.");
+        setFetchLoading(false);
+        return;
+      }
+      
       try {
         const docRef = doc(db, "admin_profile", id);
         const docSnap = await getDoc(docRef); // Await the promise
@@ -65,7 +73,7 @@ export const Header = () => {
     };
 
     fetchAdminProfile();
-  }, [id, triggerRefetch]);
+  }, [id, triggerRefetch, user, loading]);
 
   console.log(profileData);
 
