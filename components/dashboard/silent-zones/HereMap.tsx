@@ -207,7 +207,7 @@ const HereMap = ({ onCoordinatesChange, radius }: HereMapProps) => {
 
     try {
       const encodedQuery = encodeURIComponent(searchQuery);
-      const url = `https://geocode.search.hereapi.com/v1/geocode?q=${encodedQuery}&apiKey=${apikey}`;
+      const url = `/api/geocode?q=${encodedQuery}`;
 
       const response = await fetch(url);
 
