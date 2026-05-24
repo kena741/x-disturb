@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 // import { Card } from "@/components/ui/card";
-// import { Search } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -31,7 +31,7 @@ import { useDocumentData } from "react-firebase-hooks/firestore";
 import { session } from "@/lib/sessionStorage";
 import { useEffect, useState } from "react";
 import HereMap from "./HereMap";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import AddressField from "./AddressSuggestion";
 
 const CenterSchema = z.object({
@@ -57,6 +57,7 @@ const formSchema = z.object({
 });
 
 export default function UpdateSilentZone() {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -114,6 +115,7 @@ export default function UpdateSilentZone() {
           updatedAt: serverTimestamp(),
         });
         console.log("Document updated with ID:", id);
+        router.push("/dashboard/silent-zones");
       }
     } catch (error) {
       console.error("Error processing silent zone:", error);
@@ -231,13 +233,28 @@ export default function UpdateSilentZone() {
           {/* Map Component */}
 
           {/* <MapPlace /> */}
-          <HereMap
-            radius={radius}
-            onCoordinatesChange={(coords) => {
-              form.setValue("center.latitude", coords.lat);
-              form.setValue("center.longitude", coords.lng);
-            }}
-          />
+          {!loading && zoneData ? (
+            <HereMap
+              radius={radius}
+              initialCoordinates={{
+                lat: String(zoneData.center?.latitude || "0"),
+                lng: String(zoneData.center?.longitude || "0"),
+              }}
+              initialAddress={zoneData.address || ""}
+              onCoordinatesChange={(coords) => {
+                form.setValue("center.latitude", coords.lat);
+                form.setValue("center.longitude", coords.lng);
+              }}
+              onAddressChange={(address) => {
+                form.setValue("address", address);
+              }}
+            />
+          ) : (
+            <div className="h-[400px] w-full bg-slate-100 flex flex-col items-center justify-center rounded-md">
+              <Loader2 className="h-8 w-8 animate-spin text-[#E66641]" />
+              <span className="ml-2 mt-2 text-sm text-slate-500">Loading map data...</span>
+            </div>
+          )}
 
           {/* Zone Radius */}
           <FormField
@@ -287,7 +304,7 @@ export default function UpdateSilentZone() {
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button
-              onClick={() => form.reset()}
+              onClick={() => router.push("/dashboard/silent-zones")}
               variant="outline"
               type="button"
               className="cursor-pointer"

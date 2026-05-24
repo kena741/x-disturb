@@ -28,6 +28,7 @@ import { db } from "@/app/firebase/config";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { session } from "@/lib/sessionStorage";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import HereMap from "./HereMap";
 import AddressField from "./AddressSuggestion";
 
@@ -54,6 +55,7 @@ const formSchema = z.object({
 });
 
 export default function CreateSilentZone() {
+  const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -89,6 +91,7 @@ export default function CreateSilentZone() {
         updatedAt: serverTimestamp(),
       });
       console.log("Document written with ID:", docRef.id);
+      router.push("/dashboard/silent-zones");
     } catch (error) {
       console.error("Error adding document to silent_zones:", error);
       form.setError("root", {
@@ -212,6 +215,9 @@ export default function CreateSilentZone() {
               form.setValue("center.latitude", coords.lat);
               form.setValue("center.longitude", coords.lng);
             }}
+            onAddressChange={(address) => {
+              form.setValue("address", address);
+            }}
           />
 
           {/* Zone Radius */}
@@ -262,7 +268,7 @@ export default function CreateSilentZone() {
 
           <div className="flex justify-end space-x-2 pt-4">
             <Button
-              onClick={() => form.reset()}
+              onClick={() => router.push("/dashboard/silent-zones")}
               variant="outline"
               type="button"
               className="cursor-pointer"
