@@ -1,9 +1,20 @@
 "use client";
 import MetricCard from "@/components/dashboard/metric-card";
 import TransactionTable from "@/components/dashboard/RecentTransactionsTable";
+import { useTransaction } from "@/hooks/useTransaction";
 import React from "react";
 
 const Page = () => {
+  const { transactions, loading } = useTransaction();
+
+  const totalTransactions = transactions.length;
+  const activeSubscriptions = transactions.filter(
+    (tx) => ["completed", "success"].includes(tx.status.toLowerCase())
+  ).length;
+  const pendingPayments = transactions.filter(
+    (tx) => tx.status.toLowerCase() === "pending"
+  ).length;
+
   return (
     <div className="space-y-6">
       <div>
@@ -19,9 +30,18 @@ const Page = () => {
       <div>
         <h2 className="mb-4 text-xl font-semibold">Key Metrics</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <MetricCard title="Total Transaction" value="12,456" />
-          <MetricCard title="Active Subscriptions" value="3,210" />
-          <MetricCard title="Pending Payments" value="25" />
+          <MetricCard
+            title="Total Transactions"
+            value={loading ? "..." : totalTransactions.toLocaleString()}
+          />
+          <MetricCard
+            title="Completed"
+            value={loading ? "..." : activeSubscriptions.toLocaleString()}
+          />
+          <MetricCard
+            title="Pending Payments"
+            value={loading ? "..." : pendingPayments.toLocaleString()}
+          />
         </div>
       </div>
       <TransactionTable />

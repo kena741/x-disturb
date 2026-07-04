@@ -102,7 +102,7 @@ export const sendNotficationMobile = async ({
     throw new Error("Failed to send notification");
   }
 
- 
+
 }
 
 

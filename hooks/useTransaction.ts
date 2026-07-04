@@ -2,54 +2,56 @@ import { useEffect, useState } from "react";
 import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/app/firebase/config";
 
-type Payments = {
+export interface Transaction {
   id: string;
   amount: number;
-  createdAt: string;
   currency: string;
-  customerId: string;
-  customerName: string;
-  invoiceId: string;
-  orderId: string;
-  paymentMethods: string;
-  providerId: string;
-  refundStatus: string | null;
+  plan_id: string;
   status: string;
-  transactionId: string;
-};
+  tx_ref: string;
+  updated_at: Date;
+  user_id: string;
+  created_at: Date;
+}
 
 export const useTransaction = () => {
-  const [transactions, setTransactions] = useState<Payments[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, "payments"));
-    const unsub = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map((doc) => {
-        const d = doc.data();
-        return {
-          id: doc.id,
-          amount: d.amount,
-          createdAt: d.createdAt?.toDate().toLocaleString(),
-          currency: d.currency,
-          customerId: d.customerId,
-          customerName: d.customerName,
-          invoiceId: d.invoiceId,
-          orderId: d.orderId,
-          paymentMethods: d.paymentMethods,
-          providerId: d.providerId,
-          refundStatus: d.refundStatus,
-          status: d.status,
-          transactionId: d.transactionId,
-        };
-      });
+    const q = query(collection(db, "transactions"));
 
-      setTransactions(data);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => {
+          const d = doc.data();
+          return {
+            id: doc.id,
+            amount: d.amount ?? 0,
+            currency: d.currency ?? "ETB",
+            plan_id: d.plan_id ?? "",
+            status: d.status ?? "",
+            tx_ref: d.tx_ref ?? "",
+            updated_at: d.updated_at?.toDate() ?? new Date(),
+            user_id: d.user_id ?? "",
+            created_at: d.created_at?.toDate() ?? new Date(),
+          } as Transaction;
+        });
+
+        setTransactions(data.sort((a, b) => b.created_at.getTime() - a.created_at.getTime()));
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Error fetching transactions:", err);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, []);
 
-  return { transactions, loading };
+  return { transactions, loading, error };
 };

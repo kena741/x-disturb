@@ -14,6 +14,7 @@ import {
   X,
   Bell,
   KeyIcon,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ const sidebarRoutes = [
     path: "/dashboard/users-management",
   },
   { label: "Transactions", icon: Receipt, path: "/dashboard/transactions" },
+  { label: "Subscription Plans", icon: CreditCard, path: "/dashboard/subscription-plans" },
   { label: "Reports", icon: FileText, path: "/dashboard/reports" },
   { label: "Push Notification", icon: Bell, path: "/dashboard/push-notification" },
   { label: "Referals", icon: KeyIcon, path: "/dashboard/referral-management" },

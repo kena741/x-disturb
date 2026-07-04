@@ -13,7 +13,8 @@ import {
   ChevronRight,
   LogOut,
   KeyIcon,
-    Bell
+  Bell,
+  CreditCard
 } from "lucide-react";
 import {
   Sidebar,
@@ -42,6 +43,7 @@ const sidebarRoutes = [
     path: "/dashboard/users-management",
   },
   { label: "Transactions", icon: Receipt, path: "/dashboard/transactions" },
+  { label: "Subscription Plans", icon: CreditCard, path: "/dashboard/subscription-plans" },
   { label: "Reports", icon: FileText, path: "/dashboard/reports" },
   { label: "Push Notification", icon: Bell, path: "/dashboard/push-notification" },
   { label: "Referals", icon: KeyIcon, path: "/dashboard/referral-management" },
