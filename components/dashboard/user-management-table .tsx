@@ -61,7 +61,7 @@ const UserManagementTable = ({
               <AdminLoadingRow columns={8} />
             ) : users.length > 0 ? (
               users.map((user) => (
-                <TableRow key={user.id}>
+                <TableRow key={user.id} className="group">
                   <TableCell className="text-sm font-medium">
                     {user.name || user.displayName || "N/A"}
                   </TableCell>
@@ -83,7 +83,7 @@ const UserManagementTable = ({
                       : "N/A"}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -103,6 +103,7 @@ const UserManagementTable = ({
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <button
+                              type="button"
                               onClick={() => handleDelete(user.id)}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               aria-label="Delete user"

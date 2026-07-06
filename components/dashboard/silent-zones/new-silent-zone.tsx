@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { db } from "@/app/firebase/config";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -103,7 +104,9 @@ export default function CreateSilentZone() {
   }
 
   return (
-    <div className="w-full mx-auto">
+    <div className="w-full">
+      <Card className="border-border shadow-sm">
+        <CardContent className="p-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Zone Name */}
@@ -174,7 +177,7 @@ export default function CreateSilentZone() {
                     <SelectTrigger className="md:w-1/2">
                       <SelectValue placeholder="Select Location Type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white">
+                    <SelectContent>
                       <SelectItem value="Orthodox Tewahedo">
                         Orthodox Tewahedo
                       </SelectItem>
@@ -284,6 +287,8 @@ export default function CreateSilentZone() {
           </div>
         </form>
       </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

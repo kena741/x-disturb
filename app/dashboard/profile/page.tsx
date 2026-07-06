@@ -4,9 +4,13 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -14,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -23,20 +26,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { session } from "@/lib/sessionStorage";
-
-import { useEffect, useState } from "react";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/app/firebase/config";
-// import TimeZoneField from "@/components/dashboard/profile/TimeZoneInput";
-
-import Image from "next/image";
 import { useAdminContext } from "@/components/context-provider";
 import ProfileSkeleton from "@/components/dashboard/profile/ProfileSkeleton";
 import { AdminPageContent } from "@/components/admin/admin-layout";
 
-// Define the Zod schema for form validation
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -58,31 +55,26 @@ const timeZones = [
   { value: "America/Chicago", label: "Central Time (CT)" },
   { value: "America/Denver", label: "Mountain Time (MT)" },
   { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
-  { value: "America/Anchorage", label: "Alaska Time (AKT)" },
-  { value: "Pacific/Honolulu", label: "Hawaii Time (HT)" },
+  { value: "Africa/Addis_Ababa", label: "East Africa Time (EAT)" },
   { value: "Europe/London", label: "Greenwich Mean Time (GMT)" },
   { value: "Europe/Paris", label: "Central European Time (CET)" },
-  { value: "Europe/Athens", label: "Eastern European Time (EET)" },
   { value: "Asia/Dubai", label: "Gulf Standard Time (GST)" },
   { value: "Asia/Kolkata", label: "Indian Standard Time (IST)" },
-  { value: "Asia/Shanghai", label: "China Standard Time (CST)" },
-  { value: "Australia/Sydney", label: "Australian Eastern Time (AET)" },
-  { value: "Pacific/Auckland", label: "New Zealand Standard Time (NZST)" },
 ];
 
 export default function ProfilePage() {
   const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { triggerRefetch } = useAdminContext();
-
   const id = session?.getItem("userId") || "admin_id";
-  // let id = "raawbxCnmrYOT1kmU60WGnmUcv53";
 
-  // Initialize React Hook Form with default values and Zod resolver
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
   });
+
+  const firstName = form.watch("firstName");
+  const lastName = form.watch("lastName");
 
   useEffect(() => {
     const fetchAdminProfile = async () => {
@@ -116,17 +108,12 @@ export default function ProfilePage() {
     fetchAdminProfile();
   }, [id, form]);
 
-  // Handle form submission
   const onSubmit = async (data: ProfileFormValues) => {
     setSubmitting(true);
-
     try {
       const docRef = doc(db, "admin_profile", id);
       await updateDoc(docRef, data);
-
       triggerRefetch();
-
-      console.log("Admin profile updated successfully!");
     } catch (err) {
       console.error("Error updating admin profile:", err);
     } finally {
@@ -134,258 +121,256 @@ export default function ProfilePage() {
     }
   };
 
+  if (loading) {
+    return (
+      <AdminPageContent wide>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-6">
+            <ProfileSkeleton />
+          </CardContent>
+        </Card>
+      </AdminPageContent>
+    );
+  }
+
   return (
     <AdminPageContent wide>
-      {loading ? <ProfileSkeleton /> : ""}
-
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-4xl space-y-8">
-            {/* Basic Info */}
-            <section>
-              <h2 className="text-lg font-medium mb-4">Basic Info</h2>
-              <div className="grid md:grid-cols-[200px_1fr] gap-6 items-start">
-                <div className="aspect-square max-w-[200px] rounded-md flex items-center justify-center text-white text-4xl">
-                  {/* B */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-4xl space-y-6">
+          <Card className="border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold">Basic info</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-[160px_1fr]">
+              <div className="flex flex-col items-center gap-3">
+                <Avatar className="h-32 w-32">
                   <Image
                     src="/placeholder.png"
-                    alt="B"
-                    width={180}
-                    height={180}
+                    alt="Profile"
+                    width={128}
+                    height={128}
+                    className="aspect-square size-full object-cover"
+                  />
+                  <AvatarFallback className="bg-primary/10 text-2xl font-semibold text-primary">
+                    {firstName?.[0]}
+                    {lastName?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-                <div className="space-y-8">
-                  <section className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First name</FormLabel>
-                          <FormControl>
-                            <Input {...field} className="bg-gray-50" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last name</FormLabel>
-                          <FormControl>
-                            <Input {...field} className="bg-gray-50" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input {...field} className="bg-gray-50" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="bio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Bio</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              placeholder="Write a few things about yourself"
-                              className="bg-gray-50 min-h-[100px]"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </section>
-                  <section className="space-y-4">
-                    <h2 className="text-lg font-medium mb-4">
-                      Sign in credentials
-                    </h2>
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <Input {...field} className="bg-gray-50" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button
-                        disabled={true}
-                        variant="outline"
-                        className="text-[#e76f51] border-[#e76f51] hover:bg-[#e76f51]/10"
-                      >
-                        Change password
-                      </Button>
-                    </div>
-                  </section>
-                  <section className="space-y-4">
-                    <h2 className="text-lg font-medium mb-4">
-                      Location and language
-                    </h2>
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="timezone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Timezone</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="bg-gray-50">
-                                  <SelectValue placeholder="Select Time Zone" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="bg-white">
-                                {timeZones.map((timeZone) => (
-                                  <SelectItem
-                                    key={timeZone.value}
-                                    value={timeZone.value}
-                                  >
-                                    {timeZone.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
 
-                            {/* <TimeZoneField
-                                value={field.value}
-                                onSelect={(val: string) =>
-                                  form.setValue("timezone", val)
-                                }
-                              /> */}
-                            {/* <div className="relative">
-                                <Input
-                                  {...field}
-                                  className="bg-gray-50 pr-10"
-                                />
-                                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                              </div> */}
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="language"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Language</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="bg-gray-50">
-                                  <SelectValue placeholder="Select language" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="bg-white">
-                                <SelectItem value="English">English</SelectItem>
-                                <SelectItem value="Spanish">Spanish</SelectItem>
-                                <SelectItem value="French">French</SelectItem>
-                                <SelectItem value="German">German</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </section>
-                  {/* Email and notification settings */}
-                  <section className="space-y-4">
-                    <h2 className="text-lg font-medium mb-4">
-                      Email and notification settings
-                    </h2>
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="notifications.productInfo"
-                        render={({ field }) => (
-                          <FormItem className="flex items-start space-x-2">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                className="mt-1 border border-slate-400 data-[state=checked]:bg-[#e76f51] data-[state=checked]:border-[#e76f51] text-white"
-                              />
-                            </FormControl>
-                            <div className="space-y-1">
-                              <FormLabel className="text-sm font-medium cursor-pointer">
-                                I agree to receive product information, feedback
-                                requests and announcements of new features and
-                                products from Epignosis.
-                              </FormLabel>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="notifications.nonEssential"
-                        render={({ field }) => (
-                          <FormItem className="flex items-start space-x-2">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                className="mt-1 border border-slate-400 data-[state=checked]:bg-[#e76f51] data-[state=checked]:border-[#e76f51] text-white"
-                              />
-                            </FormControl>
-                            <div className="space-y-1">
-                              <FormLabel className="text-sm font-medium cursor-pointer">
-                                Exclude from all non-essential emails and
-                                notifications
-                              </FormLabel>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </section>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bio</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Write a few things about yourself"
+                          className="min-h-[100px]"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            </section>
-            {/* Action buttons */}
+            </CardContent>
+          </Card>
 
-            <div className="flex space-x-4">
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {submitting ? "Saving changes" : "Save changes"}
+          <Card className="border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold">
+                Sign-in credentials
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem className="max-w-md">
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="button" variant="outline" disabled>
+                Change password
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push("/dashboard")}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </Form>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold">
+                Location and language
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="timezone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Timezone</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select timezone" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {timeZones.map((timeZone) => (
+                          <SelectItem key={timeZone.value} value={timeZone.value}>
+                            {timeZone.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="language"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Language</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="English">English</SelectItem>
+                        <SelectItem value="Spanish">Spanish</SelectItem>
+                        <SelectItem value="French">French</SelectItem>
+                        <SelectItem value="German">German</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold">
+                Email and notification settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="notifications.productInfo"
+                render={({ field }) => (
+                  <FormItem className="flex items-start gap-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="mt-0.5"
+                      />
+                    </FormControl>
+                    <div className="space-y-1">
+                      <FormLabel className="font-normal leading-snug">
+                        Receive product updates, feedback requests, and feature
+                        announcements.
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="notifications.nonEssential"
+                render={({ field }) => (
+                  <FormItem className="flex items-start gap-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="mt-0.5"
+                      />
+                    </FormControl>
+                    <div className="space-y-1">
+                      <FormLabel className="font-normal leading-snug">
+                        Exclude from all non-essential emails and notifications.
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-3">
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {submitting ? "Saving…" : "Save changes"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/dashboard")}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Form>
     </AdminPageContent>
   );
 }

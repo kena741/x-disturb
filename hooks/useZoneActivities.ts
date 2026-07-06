@@ -1,22 +1,10 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "@/app/firebase/config";
+import type { ZoneActivityRow } from "@/lib/zone-activity";
 
-type ZoneActivity = {
-  id: string;
-  userID: string;
-  userName: string;
-  zoneID: string;
-  zoneName: string;
-  activity: string;
-  timestamp: string;
-  coordinates: {
-    latitude: number;
-    longitude: number;
-  };
-};
 export const useZoneActivities = () => {
-  const [activities, setActivities] = useState<ZoneActivity[]>([]);
+  const [activities, setActivities] = useState<ZoneActivityRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,6 +15,7 @@ export const useZoneActivities = () => {
     const unsub = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => {
         const d = doc.data();
+        const date = new Date(d.timestamp?.seconds * 1000);
         return {
           id: doc.id,
           userID: d.userID,
@@ -34,7 +23,14 @@ export const useZoneActivities = () => {
           zoneID: d.zoneID,
           zoneName: d.zoneName,
           activity: d.activity,
-          timestamp: new Date(d.timestamp?.seconds * 1000).toLocaleTimeString(),
+          timestampMs: date.getTime(),
+          timestamp: date.toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
           coordinates: d.coordinates,
         };
       });

@@ -94,7 +94,7 @@ const AddressField: React.FC<AddressFieldProps> = ({
       </div>
       {suggestions.length > 0 && open && (
          <div className="absolute left-0 right-0 z-50 mt-1 ">
-        <Command className="rounded-lg border border-gray-200 shadow-md bg-white ">
+        <Command className="rounded-md border border-border bg-popover shadow-md">
           <CommandList>
             <CommandGroup>
               {suggestions.map((suggestion, index) => (

@@ -42,13 +42,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Pencil, Trash2, Send, Download, Eye, Loader, MoreVertical } from "lucide-react";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Pencil, Trash2, Send, Download, Eye, Loader, Plus } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { User } from "@/app/api/user-management-api";
@@ -174,25 +173,32 @@ const ReferralManagementPage = () => {
       <ToastContainer />
       <AdminPageHeaderActions>
         <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 text-primary hover:bg-transparent hover:text-primary/80"
           onClick={() => {
             setEditCode(null);
             setFormData({ name: "", description: "", category: "Orthodox" });
             setOpen(true);
           }}
+          aria-label="Add referral code"
         >
-          + Add Referral Code
+          <Plus className="h-5 w-5" />
         </Button>
       </AdminPageHeaderActions>
 
       <AdminTableShell>
-        <div className="overflow-x-auto">
+        <TooltipProvider delayDuration={200}>
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="text-muted-foreground">Name</TableHead>
                 <TableHead className="text-muted-foreground">Description</TableHead>
                 <TableHead className="text-muted-foreground">Category</TableHead>
-                <TableHead className="text-right text-muted-foreground">Actions</TableHead>
+                <TableHead className="w-[1%] text-right text-muted-foreground">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -200,7 +206,7 @@ const ReferralManagementPage = () => {
                 <AdminDataTableEmpty colSpan={4} message="No referral codes yet" />
               ) : (
                 codes.map((code) => (
-                  <TableRow key={code.id}>
+                  <TableRow key={code.id} className="group">
                     <TableCell className="font-medium">{code.name}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {code.description || "—"}
@@ -208,46 +214,87 @@ const ReferralManagementPage = () => {
                     <TableCell>
                       <AdminStatusBadge label={code.category} tone="info" />
                     </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
-                              aria-label={`Actions for ${code.name}`}
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              onClick={() => handleViewUsers(code)}
+                              aria-label={`View users for ${code.name}`}
                             >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewUsers(code)}>
                               <Eye className="h-4 w-4" />
-                              View users
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEdit(code.id)}>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">View users</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              onClick={() => handleEdit(code.id)}
+                              aria-label={`Edit ${code.name}`}
+                            >
                               <Pencil className="h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSendPush(code)}>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Edit</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              onClick={() => handleSendPush(code)}
+                              aria-label={`Send push to ${code.name}`}
+                            >
                               <Send className="h-4 w-4" />
-                              Send push
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleExport(code)}>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Send push</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              onClick={() => handleExport(code)}
+                              aria-label={`Export users for ${code.name}`}
+                            >
                               <Download className="h-4 w-4" />
-                              Export users
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              variant="destructive"
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Export users</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
                               onClick={() => handleDelete(code.id)}
+                              aria-label={`Delete ${code.name}`}
                             >
                               <Trash2 className="h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Delete</TooltipContent>
+                        </Tooltip>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -255,7 +302,7 @@ const ReferralManagementPage = () => {
               )}
             </TableBody>
           </Table>
-        </div>
+        </TooltipProvider>
       </AdminTableShell>
 
       <Dialog open={open} onOpenChange={setOpen}>

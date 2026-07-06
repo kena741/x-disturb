@@ -1,9 +1,11 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -21,36 +23,25 @@ export function ConfirmRemovalDialog({
   onConfirm,
 }: ConfirmRemovalDialogProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-2xl shadow-lg border p-6 bg-white dark:bg-gray-900">
-        <DialogHeader className="text-center">
-          <div className="flex justify-center items-center text-red-600 mb-2">
-            <AlertTriangle className="h-8 w-8" />
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader className="items-center text-center">
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
           </div>
-          <DialogTitle className="text-lg font-semibold">
-            Remove Silent Zone?
-          </DialogTitle>
-          <DialogDescription className="text-gray-600 dark:text-gray-400">
-            This action cannot be undone. Are you sure you want to remove this
-            silent zone permanently?
+          <DialogTitle>Remove silent zone?</DialogTitle>
+          <DialogDescription>
+            This action cannot be undone. The zone will be permanently deleted.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="mt-6 flex justify-center gap-3">
-          <Button
-            onClick={onClose}
-            variant="outline"
-            className="rounded-full px-6"
-          >
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            onClick={onConfirm}
-            className="bg-red-600 hover:bg-red-700 text-white rounded-full px-6"
-          >
-            Confirm
+          <Button type="button" variant="destructive" onClick={onConfirm}>
+            Delete zone
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

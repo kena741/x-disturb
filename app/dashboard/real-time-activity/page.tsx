@@ -1,10 +1,8 @@
 "use client";
-import React from "react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 
+import { useMemo, useState } from "react";
+import { MapPin, Radio, Users, Circle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectTrigger,
@@ -12,7 +10,6 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-
 import {
   Table,
   TableBody,
@@ -21,244 +18,329 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-// import HereMap from "@/components/dashboard/silent-zones/HereMap";
-import Image from "next/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useZoneActivities } from "@/hooks/useZoneActivities";
 import ActivityMap from "@/components/real-time-activity/ActivityMap";
-import { SilentZone, useSilentZones } from "@/hooks/useSilentZones";
+import { useSilentZones } from "@/hooks/useSilentZones";
 import { AdminPageContent } from "@/components/admin/admin-layout";
+import { AdminStatCard } from "@/components/admin/admin-stat-card";
+import {
+  AdminTableShell,
+  AdminDataTableEmpty,
+  AdminLoadingRow,
+  AdminPagination,
+} from "@/components/admin/data-table";
+import {
+  AdminFilterPanel,
+  AdminSearchInput,
+  AdminFilterPills,
+} from "@/components/admin/admin-filter-panel";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
+import { formatAdminCount } from "@/lib/admin-display";
+import { AdminStatusTone } from "@/lib/admin-status-badge";
+import {
+  ActivityTypeFilter,
+  filterZoneActivities,
+  getActivityCategory,
+  getSimplifiedZones,
+  type ZoneActivityRow,
+} from "@/lib/zone-activity";
 
-interface Filters {
-  insideZones: boolean;
-  outsideZones: boolean;
+const PAGE_SIZE = 10;
+
+const ACTIVITY_FILTERS: { value: ActivityTypeFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "enter", label: "Entered" },
+  { value: "exit", label: "Exited" },
+  { value: "other", label: "Other" },
+];
+
+function getActivityTone(activity: string): AdminStatusTone {
+  const category = getActivityCategory(activity);
+  if (category === "enter") return "success";
+  if (category === "exit") return "warning";
+  return "info";
 }
 
-interface SimplifiedZone {
-  name: string;
-  coord: {
-    lat: number;
-    lng: number;
-  };
-  radius: number;
-}
-
-const Page = () => {
-  const [filters, setFilters] = useState<Filters>({
-    insideZones: false,
-    outsideZones: false,
-  });
-
+export default function RealTimeActivityPage() {
   const [coordinates, setCoordinates] = useState({ lat: 9.0572, lng: 38.7592 });
   const [radius, setRadius] = useState(500);
-  const { silentZones } = useSilentZones();
+  const [mapZone, setMapZone] = useState("");
+  const [search, setSearch] = useState("");
+  const [logZone, setLogZone] = useState("");
+  const [activityType, setActivityType] = useState<ActivityTypeFilter>("all");
+  const [page, setPage] = useState(1);
 
+  const { silentZones } = useSilentZones();
   const { activities, loading } = useZoneActivities();
 
-  const recentUniqueUsers = Array.from(
-    new Map(activities.map((a) => [a.userID, a])).values()
-  ).slice(0, 3);
+  const simplifiedZones = useMemo(
+    () => getSimplifiedZones(silentZones),
+    [silentZones]
+  );
 
-  function getSimplifiedZones(zones: SilentZone[]): SimplifiedZone[] {
-    return zones.map((zone) => ({
-      name: zone.name,
-      coord: {
-        lat: zone.center.latitude,
-        lng: zone.center.longitude,
-      },
-      radius: zone.radius,
-    }));
-  }
+  const zoneNames = useMemo(
+    () => Array.from(new Set(activities.map((a) => a.zoneName))).sort(),
+    [activities]
+  );
 
-  const simplifiedZones = getSimplifiedZones(silentZones);
+  const filteredActivities = useMemo(
+    () =>
+      filterZoneActivities(activities, {
+        search,
+        zoneName: logZone,
+        activityType,
+        simplifiedZones,
+      }),
+    [activities, search, logZone, activityType, simplifiedZones]
+  );
 
-  const handleChange = (filter: keyof Filters) => {
-    setFilters((prev) => ({ ...prev, [filter]: !prev[filter] }));
+  const totalPages = Math.max(1, Math.ceil(filteredActivities.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedActivities = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredActivities.slice(start, start + PAGE_SIZE);
+  }, [filteredActivities, currentPage]);
+
+  const uniqueUserCount = useMemo(
+    () => new Set(activities.map((a) => a.userID)).size,
+    [activities]
+  );
+
+  const activityFilterOptions = useMemo(
+    () =>
+      ACTIVITY_FILTERS.map((opt) => ({
+        ...opt,
+        count:
+          opt.value === "all"
+            ? activities.length
+            : activities.filter(
+                (a) => getActivityCategory(a.activity) === opt.value
+              ).length,
+      })),
+    [activities]
+  );
+
+  const hasActiveFilters =
+    search.length > 0 || logZone.length > 0 || activityType !== "all";
+
+  const handleMapZoneChange = (zoneName: string) => {
+    setMapZone(zoneName);
+    const match = simplifiedZones.find((z) => z.name === zoneName);
+    if (!match) return;
+    setRadius(match.radius);
+    setCoordinates({ lat: match.coord.lat, lng: match.coord.lng });
   };
 
-  const handleApplyFilters = () => {
-    console.log("Filters applied:", filters);
+  const handleRowFocus = (row: ZoneActivityRow) => {
+    if (!row.coordinates?.latitude || !row.coordinates?.longitude) return;
+    setCoordinates({
+      lat: row.coordinates.latitude,
+      lng: row.coordinates.longitude,
+    });
+    setMapZone(row.zoneName);
+    const match = simplifiedZones.find((z) => z.name === row.zoneName);
+    if (match) setRadius(match.radius);
   };
 
-  const handleZoneChange = (zoneName: string) => {
-    const selectedZone = simplifiedZones.find((zone) => zone.name === zoneName);
-    if (selectedZone) {
-      setRadius(selectedZone.radius);
-      setCoordinates({
-        lat: selectedZone.coord.lat,
-        lng: selectedZone.coord.lng,
-      });
-    }
+  const clearLogFilters = () => {
+    setSearch("");
+    setLogZone("");
+    setActivityType("all");
+    setPage(1);
   };
 
   return (
-    <AdminPageContent wide>
-    <div className="w-full space-y-6 xl:flex xl:gap-6 xl:space-y-0">
-      <div className="p-0 w-full xl:w-1/4 xl:h-full flex flex-col gap-4">
-        <div className="space-y-2">
-          <p className="admin-section-title text-base">Zone selection</p>
-          <Select
-            // defaultValue="Dembel City Center"
-            onValueChange={handleZoneChange}
-          >
-            <SelectTrigger className="w-full p-3 bg-white border border-gray-300 rounded-md cursor-pointer">
-              <SelectValue placeholder="Select Location" />
-            </SelectTrigger>
-            <SelectContent className="bg-white">
-              {simplifiedZones.map((zone, index) => {
-                return (
-                  <SelectItem key={index} value={zone.name}>
+    <AdminPageContent wide className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <AdminStatCard
+          title="Live events"
+          value={formatAdminCount(activities.length)}
+          icon={Radio}
+          loading={loading}
+        />
+        <AdminStatCard
+          title="Active users"
+          value={formatAdminCount(uniqueUserCount)}
+          icon={Users}
+          loading={loading}
+        />
+        <AdminStatCard
+          title="Monitored zones"
+          value={formatAdminCount(simplifiedZones.length)}
+          icon={MapPin}
+          loading={loading}
+        />
+      </div>
+
+      <Card className="overflow-hidden border-border shadow-sm">
+        <CardHeader className="flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base font-semibold">Live map</CardTitle>
+            {!loading && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                <Circle className="h-2 w-2 fill-current animate-pulse" />
+                Live
+              </span>
+            )}
+          </div>
+          <div className="w-full sm:w-64">
+            <Select value={mapZone} onValueChange={handleMapZoneChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Focus on a zone" />
+              </SelectTrigger>
+              <SelectContent>
+                {simplifiedZones.map((zone) => (
+                  <SelectItem key={zone.name} value={zone.name}>
                     {zone.name}
                   </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className=" space-y-6">
-          {/* Filters Section */}
-          <div className="space-y-4">
-            <h2 className="admin-section-title text-base">Activity Filters</h2>
-            <div className="flex flex-col gap-2">
-              {/* Fix 1: Use proper label association with the checkbox */}
-              <div className=" flex items-center space-x-2">
-                <Checkbox
-                  id="insideZones"
-                  checked={filters.insideZones}
-                  onCheckedChange={() => handleChange("insideZones")}
-                />
-                <Label
-                  htmlFor="insideZones"
-                  className="text-gray-950 cursor-pointer"
-                >
-                  Inside Zones
-                </Label>
-              </div>
-
-              <div className="cursor-pointer flex items-center space-x-2">
-                <Checkbox
-                  id="outsideZones"
-                  checked={filters.outsideZones}
-                  onCheckedChange={() => handleChange("outsideZones")}
-                />
-                <Label
-                  htmlFor="outsideZones"
-                  className="text-gray-950 cursor-pointer"
-                >
-                  Outside Zones
-                </Label>
-              </div>
-            </div>
-            <Button
-              className="bg-gray-200 text-gray-950 w-full px-6 py-2 rounded-md"
-              onClick={handleApplyFilters}
-            >
-              Apply Filters
-            </Button>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-
-          {/* User Activity Section */}
-          <div>
-            <h3 className="text-xl font-semibold">User Activity</h3>
-            <div className="space-y-4 mt-4">
-              {loading
-                ? Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="flex items-center space-x-4">
-                      <div className="w-12 h-12 rounded-full  bg-[#f9d3c4] dark:bg-[#b54c2f]/20animate-pulse" />
-                      <div className="space-y-2">
-                        <div className="h-4 w-32  bg-[#f9d3c4] dark:bg-[#b54c2f]/20rounded animate-pulse" />
-                        <div className="h-3 w-48 bg-gray-200 dark:bg-gray-600 rounded animate-pulse" />
-                      </div>
-                    </div>
-                  ))
-                : recentUniqueUsers.map((user, index) => (
-                    <div
-                      key={user.userID}
-                      className="flex items-center space-x-4"
-                    >
-                      <Image
-                        width={48}
-                        height={48}
-                        src={`/U${index + 1}.png`}
-                        alt="User avatar"
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                      <div>
-                        <p className="font-medium">{`User: ${user.userName}`}</p>
-                        <p className="text-sm text-gray-500">{`${user.activity} in: ${user.zoneName}`}</p>
-                      </div>
-                    </div>
-                  ))}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="w-full xl:w-3/4 h-full flex flex-col gap-[10px]">
-        <div className="rounded-b-md">
+        </CardHeader>
+        <CardContent className="p-0">
           <ActivityMap coords={coordinates} radius={radius} />
-        </div>
-        <p className="text-gray-950 text-xl font-bold">Zone Log Activity</p>
-        <div className="rounded-xl border overflow-hidden shadow-sm bg-background">
-          <Table className="min-w-full border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-950 dark:text-white shadow-md rounded-xl">
-            <TableHeader className="border-b border-gray-400 dark:border-gray-600 ">
-              <TableRow>
-                <TableHead className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">
-                  User
-                </TableHead>
-                <TableHead className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">
-                  Zone
-                </TableHead>
-                <TableHead className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">
-                  Activity
-                </TableHead>
-                <TableHead className="px-6 py-4 text-left text-sm font-medium text-gray-900 dark:text-white">
-                  Time Stamp
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading
-                ? Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={`skeleton-row-${i}`}>
-                      <TableCell className="px-6 py-4">
-                        <div className="h-4 w-32 rounded  bg-[#f9d3c4] dark:bg-[#b54c2f]/20 animate-pulse" />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border shadow-sm">
+        <CardHeader className="space-y-1 border-b border-border pb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-base font-semibold">
+              Zone activity log
+            </CardTitle>
+            {!loading && (
+              <span className="text-sm text-muted-foreground">
+                {formatAdminCount(filteredActivities.length)} of{" "}
+                {formatAdminCount(activities.length)} events
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Search users, zones, or actions. Click a row to focus the map.
+          </p>
+        </CardHeader>
+
+        <CardContent className="space-y-4 pt-4">
+          <AdminFilterPanel>
+            <AdminSearchInput
+              value={search}
+              onChange={(value) => {
+                setSearch(value);
+                setPage(1);
+              }}
+              placeholder="Search user, zone, or activity…"
+              className="md:flex-1"
+            />
+            <Select
+              value={logZone || "all"}
+              onValueChange={(value) => {
+                setLogZone(value === "all" ? "" : value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-10 w-full bg-background md:w-48">
+                <SelectValue placeholder="All zones" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All zones</SelectItem>
+                {zoneNames.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {hasActiveFilters && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 shrink-0"
+                onClick={clearLogFilters}
+              >
+                Clear
+              </Button>
+            )}
+          </AdminFilterPanel>
+
+          <AdminFilterPills
+            options={activityFilterOptions}
+            value={activityType}
+            onChange={(value) => {
+              setActivityType(value);
+              setPage(1);
+            }}
+          />
+
+          <AdminTableShell>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-muted-foreground">User</TableHead>
+                  <TableHead className="text-muted-foreground">Zone</TableHead>
+                  <TableHead className="text-muted-foreground">
+                    Activity
+                  </TableHead>
+                  <TableHead className="text-right text-muted-foreground">
+                    Timestamp
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <AdminLoadingRow columns={4} rows={8} />
+                ) : paginatedActivities.length === 0 ? (
+                  <AdminDataTableEmpty
+                    colSpan={4}
+                    message={
+                      hasActiveFilters
+                        ? "No events match your search or filters"
+                        : "No zone activity yet"
+                    }
+                  />
+                ) : (
+                  paginatedActivities.map((activity) => (
+                    <TableRow
+                      key={activity.id}
+                      className="cursor-pointer"
+                      onClick={() => handleRowFocus(activity)}
+                    >
+                      <TableCell className="font-medium">
+                        {activity.userName}
                       </TableCell>
-                      <TableCell className="px-6 py-4">
-                        <div className="h-4 w-28 rounded  bg-[#f9d3c4] dark:bg-[#b54c2f]/20animate-pulse" />
+                      <TableCell className="text-muted-foreground">
+                        {activity.zoneName}
                       </TableCell>
-                      <TableCell className="px-6 py-4">
-                        <div className="h-4 w-24 rounded  bg-[#f9d3c4] dark:bg-[#b54c2f]/20animate-pulse" />
+                      <TableCell>
+                        <AdminStatusBadge
+                          label={activity.activity}
+                          tone={getActivityTone(activity.activity)}
+                        />
                       </TableCell>
-                      <TableCell className="px-6 py-4">
-                        <div className="h-4 w-20 rounded  bg-[#f9d3c4] dark:bg-[#b54c2f]/20animate-pulse" />
+                      <TableCell className="text-right text-muted-foreground tabular-nums">
+                        {activity.timestamp}
                       </TableCell>
                     </TableRow>
                   ))
-                : activities.map((user) => (
-                    <TableRow
-                      key={user.id}
-                      className="border-b border-gray-400 dark:border-gray-600 cursor-pointer"
-                    >
-                      <TableCell className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {user.userName}
-                      </TableCell>
-                      <TableCell className="px-6 py-4 text-sm text-gray-500 dark:text-gray-200">
-                        {user.zoneName}
-                      </TableCell>
-                      <TableCell className="flex items-center gap-4 px-6 py-4 text-sm">
-                        {user.activity}
-                      </TableCell>
-                      <TableCell className="px-6 py-4 text-sm text-gray-900 dark:text-gray-200">
-                        {user.timestamp}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-    </div>
+                )}
+              </TableBody>
+            </Table>
+          </AdminTableShell>
+
+          {!loading && filteredActivities.length > PAGE_SIZE && (
+            <div className="flex justify-end">
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPrev={() => setPage((p) => Math.max(1, p - 1))}
+                onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </AdminPageContent>
   );
-};
-
-export default Page;
+}

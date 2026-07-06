@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { MoreVertical, Trash2, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useState } from "react";
+import Link from "next/link";
+import { Trash2, X, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,106 +14,97 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import Link from "next/link"
-import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks"
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux-hooks";
 import {
   clearAllNotifications,
   deleteNotification,
   loadMoreNotifications,
   markAllAsRead,
   markAsRead,
-} from "@/features/notifications/notificationsSlice"
-import { formatDistanceToNow } from "date-fns"
+} from "@/features/notifications/notificationsSlice";
+import { formatDistanceToNow } from "date-fns";
 
 export default function NotificationsPage() {
-  const dispatch = useAppDispatch()
-  const notifications = useAppSelector((state) => state.notifications.items)
-  const loading = useAppSelector((state) => state.notifications.loading)
+  const dispatch = useAppDispatch();
+  const notifications = useAppSelector((state) => state.notifications.items);
+  const loading = useAppSelector((state) => state.notifications.loading);
 
-  const [showClearAlert, setShowClearAlert] = useState(false)
-  const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null)
+  const [showClearAlert, setShowClearAlert] = useState(false);
+  const [notificationToDelete, setNotificationToDelete] = useState<string | null>(
+    null
+  );
 
   const handleClearAll = () => {
-    dispatch(clearAllNotifications())
-    setShowClearAlert(false)
-  }
+    dispatch(clearAllNotifications());
+    setShowClearAlert(false);
+  };
 
   const handleDeleteNotification = (id: string) => {
-    dispatch(deleteNotification(id))
-    setNotificationToDelete(null)
-  }
+    dispatch(deleteNotification(id));
+    setNotificationToDelete(null);
+  };
 
-  const handleMarkAllAsRead = () => {
-    dispatch(markAllAsRead())
-  }
-
-  const handleMarkAsRead = (id: string) => {
-    dispatch(markAsRead(id))
-  }
-
-  const handleLoadMore = () => {
-    dispatch(loadMoreNotifications())
-  }
-
-  const formatTime = (timestamp: number) => {
-    return formatDistanceToNow(timestamp, { addSuffix: false })
-  }
+  const formatTime = (timestamp: number) =>
+    formatDistanceToNow(timestamp, { addSuffix: true });
 
   return (
-    <div className="max-w-7xl">
-      <div className="flex items-center gap-4 mb-6">
-       
-        <h1 className="text-2xl font-bold">Notifications</h1>
-      </div>
+    <TooltipProvider delayDuration={200}>
+      <Card className="border-border shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-border pb-4">
+          <CardTitle className="text-base font-semibold">
+            All notifications
+          </CardTitle>
+          {notifications.length > 0 && (
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => dispatch(markAllAsRead())}
+              >
+                Mark all read
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowClearAlert(true)}
+              >
+                Clear all
+              </Button>
+            </div>
+          )}
+        </CardHeader>
 
-      <div className="bg-white rounded-lg shadow">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">All Notifications</h2>
-          <div className="flex gap-2">
-            {notifications.length > 0 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleMarkAllAsRead}
-                  className="text-sm hover:text-[#E66641] hover:bg-[#FDE8E4]"
-                >
-                  Mark all as read
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowClearAlert(true)}
-                  className="text-sm text-[#E66641] hover:text-[#C4502F] hover:bg-[#FDE8E4]"
-                >
-                  Clear notification history
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div>
+        <CardContent className="p-0">
           {notifications.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">
-              <p className="mb-4">No notifications</p>
-              <Link href="/dashboard">
-                <Button className="bg-[#E66641] hover:bg-[#C4502F]">Return to Dashboard</Button>
-              </Link>
+            <div className="flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+              <p className="text-sm text-muted-foreground">No notifications yet</p>
+              <Button asChild>
+                <Link href="/dashboard">Back to dashboard</Link>
+              </Button>
             </div>
           ) : (
             <>
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`flex items-start gap-3 p-4 border-b border-gray-300 hover:bg-[#FDE8E4] transition-colors ${
-                    !notification.read ? "bg-[#fff5f3]" : ""
+                  className={`group flex items-start gap-3 border-b border-border px-4 py-4 transition-colors last:border-b-0 hover:bg-muted/40 ${
+                    !notification.read ? "bg-primary/5" : ""
                   }`}
                 >
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={`/placeholder.svg?height=40&width=40`} alt={notification.user} />
-                    <AvatarFallback className="bg-[#E66641] text-white">
+                    <AvatarImage
+                      src="/placeholder.svg"
+                      alt={notification.user}
+                    />
+                    <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
                       {notification.user
                         .split(" ")
                         .map((n) => n[0])
@@ -121,93 +112,121 @@ export default function NotificationsPage() {
                     </AvatarFallback>
                   </Avatar>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">User: {notification.user}</p>
-                    <p className="text-sm text-muted-foreground">Entered Zone: {notification.zone}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">
+                      {notification.user}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Entered zone: {notification.zone}
+                    </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  <div className="flex items-center gap-1">
+                    <span className="mr-1 whitespace-nowrap text-xs text-muted-foreground">
                       {formatTime(notification.timestamp)}
                     </span>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-muted/50 transition">
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-white" align="end">
-                        <DropdownMenuItem
-                          onClick={() => setNotificationToDelete(notification.id)}
-                          className="text-[#E66641] focus:text-[#E66641] focus:bg-[#FDE8E4]"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                        {!notification.read && (
-                          <DropdownMenuItem onClick={() => handleMarkAsRead(notification.id)}>
-                            <X className="mr-2 h-4 w-4" />
-                            Mark as read
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100">
+                      {!notification.read && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              onClick={() => dispatch(markAsRead(notification.id))}
+                              aria-label="Mark as read"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Mark as read</TooltipContent>
+                        </Tooltip>
+                      )}
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => setNotificationToDelete(notification.id)}
+                            aria-label="Delete notification"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">Delete</TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
                 </div>
               ))}
 
-              <div className="p-4 flex justify-center">
+              <div className="flex justify-center border-t border-border p-4">
                 <Button
                   variant="outline"
-                  onClick={handleLoadMore}
-                  className="text-[#E66641] hover:text-[#C4502F] hover:bg-[#FDE8E4] border-[#E66641]"
+                  onClick={() => dispatch(loadMoreNotifications())}
                   disabled={loading}
                 >
-                  {loading ? "Loading..." : "Load more notifications"}
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading…
+                    </>
+                  ) : (
+                    "Load more"
+                  )}
                 </Button>
               </div>
             </>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Clear All Notifications Alert */}
       <AlertDialog open={showClearAlert} onOpenChange={setShowClearAlert}>
-        <AlertDialogContent className="bg-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Clear all notifications?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. All notifications will be permanently removed.
+              This action cannot be undone. All notifications will be permanently
+              removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClearAll} className="bg-[#E66641] hover:bg-[#C4502F] text-white">
-              Clear all
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleClearAll}>Clear all</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete Single Notification Alert */}
-      <AlertDialog open={notificationToDelete !== null} onOpenChange={(open) => !open && setNotificationToDelete(null)}>
+      <AlertDialog
+        open={notificationToDelete !== null}
+        onOpenChange={(open) => !open && setNotificationToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete notification?</AlertDialogTitle>
-            <AlertDialogDescription>This notification will be permanently removed.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This notification will be permanently removed.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => notificationToDelete && handleDeleteNotification(notificationToDelete)}
-              className="bg-[#E66641] hover:bg-[#C4502F] text-white"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() =>
+                notificationToDelete &&
+                handleDeleteNotification(notificationToDelete)
+              }
             >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  )
+    </TooltipProvider>
+  );
 }

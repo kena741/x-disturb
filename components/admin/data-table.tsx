@@ -12,7 +12,7 @@ export function AdminTableShell({ children, className }: AdminTableShellProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card shadow-sm overflow-hidden",
+        "rounded-xl border border-border bg-card shadow-sm",
         className
       )}
     >

@@ -84,7 +84,6 @@ export default function SilentZones() {
 
   return (
     <AdminTableShell>
-      <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -94,7 +93,7 @@ export default function SilentZones() {
             <TableHead className="text-muted-foreground">Center Coordinates</TableHead>
             <TableHead className="text-muted-foreground">Status</TableHead>
             <TableHead className="text-muted-foreground">Description</TableHead>
-            <TableHead className="text-center text-muted-foreground">Actions</TableHead>
+            <TableHead className="w-[1%] text-right text-muted-foreground">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -102,7 +101,7 @@ export default function SilentZones() {
             <AdminLoadingRow columns={7} />
           ) : silentZones.length > 0 ? (
             silentZones.map((zone) => (
-              <TableRow key={zone.id}>
+              <TableRow key={zone.id} className="group">
                 <TableCell className="font-medium">{zone.name || "N/A"}</TableCell>
                 <TableCell className="capitalize text-muted-foreground">{zone.type}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -121,12 +120,12 @@ export default function SilentZones() {
                 <TableCell className="max-w-[250px] truncate text-muted-foreground">
                   {zone.description || "N/A"}
                 </TableCell>
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center gap-1">
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 max-md:opacity-100">
                   <Link
                     href={`silent-zones/edit-zone?id=${zone.id}`}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Edit Zone"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label="Edit zone"
                   >
                     <Edit className="h-4 w-4" />
                   </Link>
@@ -139,7 +138,7 @@ export default function SilentZones() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    aria-label="Delete Zone"
+                    aria-label="Delete zone"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -152,7 +151,6 @@ export default function SilentZones() {
           )}
         </TableBody>
       </Table>
-      </div>
 
       {zoneToRemove && (
         <ConfirmRemovalDialog
