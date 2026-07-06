@@ -19,6 +19,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/app/firebase/config";
 import { useParams } from "next/navigation";
 import { Switch } from "@/components/ui/switch";
+import { AdminPageContent } from "@/components/admin/admin-layout";
 
 const UserDetailPage = () => {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -75,10 +76,9 @@ const UserDetailPage = () => {
   }, [userId, form]);
 
   return (
-    <div className="w-full mx-auto bg-white dark:bg-gray-900 text-gray-950 dark:text-white rounded-lg p-6">
-      <h1 className="text-3xl font-bold mb-6">Manage User</h1>
+    <AdminPageContent wide>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-2xl space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm">
           <Image src="/profile.png" alt="Profile" width={180} height={180} />
 
           <FormField
@@ -166,18 +166,16 @@ const UserDetailPage = () => {
           />
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button onClick={() => form.reset()} variant="outline" type="button" className="cursor-pointer">
+            <Button onClick={() => form.reset()} variant="outline" type="button">
               Cancel
             </Button>
-            <Button disabled={isUpdating} type="submit" className={`${
-              isUpdating ? "bg-[#e78064]" : "bg-[#E66641]"
-            } text-white cursor-pointer`}>
-              {isUpdating ? "Updating" : "Update"}
+            <Button disabled={isUpdating} type="submit">
+              {isUpdating ? "Updating…" : "Update"}
             </Button>
           </div>
         </form>
       </Form>
-    </div>
+    </AdminPageContent>
   );
 };
 

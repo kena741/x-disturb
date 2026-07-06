@@ -26,6 +26,7 @@ import Image from "next/image";
 import { useZoneActivities } from "@/hooks/useZoneActivities";
 import ActivityMap from "@/components/real-time-activity/ActivityMap";
 import { SilentZone, useSilentZones } from "@/hooks/useSilentZones";
+import { AdminPageContent } from "@/components/admin/admin-layout";
 
 interface Filters {
   insideZones: boolean;
@@ -90,15 +91,11 @@ const Page = () => {
   };
 
   return (
-    <div className="w-full xl:flex gap-2">
-      <div className="p-6 w-full xl:w-1/4 xl:h-full flex flex-col gap-[15px]">
-        <h1 className="text-xl font-bold  text-gray-900">Real-time activity</h1>
-        <p className="text-gray-500 text-sm">
-          Live update of user locations and activities with in designated zone.
-        </p>
-
-        <div className=" space-y-2">
-          <p className="text-xl font-bold  text-gray-900">Zone selection</p>
+    <AdminPageContent wide>
+    <div className="w-full space-y-6 xl:flex xl:gap-6 xl:space-y-0">
+      <div className="p-0 w-full xl:w-1/4 xl:h-full flex flex-col gap-4">
+        <div className="space-y-2">
+          <p className="admin-section-title text-base">Zone selection</p>
           <Select
             // defaultValue="Dembel City Center"
             onValueChange={handleZoneChange}
@@ -120,7 +117,7 @@ const Page = () => {
         <div className=" space-y-6">
           {/* Filters Section */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Activity Filters</h2>
+            <h2 className="admin-section-title text-base">Activity Filters</h2>
             <div className="flex flex-col gap-2">
               {/* Fix 1: Use proper label association with the checkbox */}
               <div className=" flex items-center space-x-2">
@@ -260,6 +257,7 @@ const Page = () => {
         </div>
       </div>
     </div>
+    </AdminPageContent>
   );
 };
 

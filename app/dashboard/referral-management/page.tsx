@@ -13,6 +13,20 @@ import {
 } from "@/app/api/referral-management-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AdminPageContent } from "@/components/admin/admin-layout";
+import { AdminPageHeaderActions } from "@/components/admin/admin-page-header-provider";
+import {
+  AdminTableShell,
+  AdminDataTableEmpty,
+} from "@/components/admin/data-table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -20,18 +34,41 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Pencil, Trash2, Send, Download, Eye, Loader } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Pencil, Trash2, Send, Download, Eye, Loader, MoreVertical } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { User } from "@/app/api/user-management-api";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
 
 type ReferralCategory = "Orthodox" | "Protestant" | "Mosque" | "Library";
+
 interface ReferralCode {
   id: string;
   name: string;
   description: string;
   category: ReferralCategory;
 }
+
+const CATEGORY_OPTIONS: ReferralCategory[] = [
+  "Orthodox",
+  "Protestant",
+  "Mosque",
+  "Library",
+];
 
 const ReferralManagementPage = () => {
   const [codes, setCodes] = useState<ReferralCode[]>([]);
@@ -44,6 +81,10 @@ const ReferralManagementPage = () => {
     description: "",
     category: "Orthodox",
   });
+  const [isSaving, setIsSaving] = useState(false);
+  const [viewingUsers, setViewingUsers] = useState<User[]>([]);
+  const [selectedGroupName, setSelectedGroupName] = useState<string>("");
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const getCodes = async () => {
     const data = await fetchReferralCodes();
@@ -53,7 +94,6 @@ const ReferralManagementPage = () => {
   useEffect(() => {
     getCodes();
   }, []);
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
     if (!formData.name.trim()) return;
@@ -86,9 +126,6 @@ const ReferralManagementPage = () => {
       toast.error("Delete failed");
     }
   };
-  const [viewingUsers, setViewingUsers] = useState<User[]>([]);
-  const [selectedGroupName, setSelectedGroupName] = useState<string>("");
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const handleViewUsers = async (code: ReferralCode) => {
     try {
@@ -131,81 +168,105 @@ const ReferralManagementPage = () => {
       toast.error("Failed to fetch referral code");
     }
   };
+
   return (
-    <div className="p-6">
+    <AdminPageContent>
       <ToastContainer />
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
-          Referral Code Management
-        </h2>
+      <AdminPageHeaderActions>
         <Button
           onClick={() => {
-            setEditCode(null); // CLEAR this first!
-            setFormData({ name: "", description: "", category: "Orthodox" }); // also reset form
+            setEditCode(null);
+            setFormData({ name: "", description: "", category: "Orthodox" });
             setOpen(true);
           }}
         >
           + Add Referral Code
         </Button>
-      </div>
+      </AdminPageHeaderActions>
 
-      <table className="w-full border text-sm bg-white dark:bg-gray-900 rounded">
-        <thead className="bg-gray-100 dark:bg-gray-800 text-left">
-          <tr>
-            <th className="p-3">Name</th>
-            <th className="p-3">Description</th>
-            <th className="p-3">Category</th>
-            <th className="p-3 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {codes.map((code) => (
-            <tr
-              key={code.id}
-              className="border-t hover:bg-gray-50 dark:hover:bg-gray-800"
-            >
-              <td className="p-3">{code.name}</td>
-              <td className="p-3">{code.description}</td>
-              <td className="p-3">{code.category}</td>
-              <td className="p-3 text-center space-x-2">
-              <Button onClick={() => handleViewUsers(code)}>
-                  <Eye size={16} />
-                </Button>
-                <Button onClick={() => handleEdit(code.id)}>
-                  <Pencil size={16} />
-                </Button>
-
-                <Button
-                  className="text-red-500"
-                  onClick={() => handleDelete(code.id)}
-                >
-                  <Trash2 size={16} />
-                </Button>
-              
-                <Button onClick={() => handleSendPush(code)}>
-                  <Send size={16} />
-                </Button>
-                <Button onClick={() => handleExport(code)}>
-                  <Download size={16} />
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <AdminTableShell>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="text-muted-foreground">Name</TableHead>
+                <TableHead className="text-muted-foreground">Description</TableHead>
+                <TableHead className="text-muted-foreground">Category</TableHead>
+                <TableHead className="text-right text-muted-foreground">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {codes.length === 0 ? (
+                <AdminDataTableEmpty colSpan={4} message="No referral codes yet" />
+              ) : (
+                codes.map((code) => (
+                  <TableRow key={code.id}>
+                    <TableCell className="font-medium">{code.name}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {code.description || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <AdminStatusBadge label={code.category} tone="info" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label={`Actions for ${code.name}`}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewUsers(code)}>
+                              <Eye className="h-4 w-4" />
+                              View users
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(code.id)}>
+                              <Pencil className="h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleSendPush(code)}>
+                              <Send className="h-4 w-4" />
+                              Send push
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleExport(code)}>
+                              <Download className="h-4 w-4" />
+                              Export users
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => handleDelete(code.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </AdminTableShell>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="bg-white dark:bg-gray-900">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{editCode ? "Edit" : "Add"} Referral Code</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
-            <div>
-              <label
-                htmlFor="referral-name"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
+            <div className="space-y-2">
+              <label htmlFor="referral-name" className="text-sm font-medium">
                 Name
               </label>
               <Input
@@ -218,11 +279,8 @@ const ReferralManagementPage = () => {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="referral-description"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
+            <div className="space-y-2">
+              <label htmlFor="referral-description" className="text-sm font-medium">
                 Description
               </label>
               <Input
@@ -235,29 +293,30 @@ const ReferralManagementPage = () => {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="referral-category"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
+            <div className="space-y-2">
+              <label htmlFor="referral-category" className="text-sm font-medium">
                 Category
               </label>
-              <select
-                id="referral-category"
-                className="w-full border p-2 rounded bg-gray-100 dark:bg-gray-800 dark:text-white"
+              <Select
                 value={formData.category}
-                onChange={(e) =>
+                onValueChange={(value) =>
                   setFormData({
                     ...formData,
-                    category: e.target.value as ReferralCategory,
+                    category: value as ReferralCategory,
                   })
                 }
               >
-                <option value="Orthodox">Orthodox</option>
-                <option value="Protestant">Protestant</option>
-                <option value="Mosque">Mosque</option>
-                <option value="Library">Library</option>
-              </select>
+                <SelectTrigger id="referral-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_OPTIONS.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -279,9 +338,9 @@ const ReferralManagementPage = () => {
       </Dialog>
 
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="bg-white dark:bg-gray-900 max-w-xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">
+            <DialogTitle>
               Users in <span className="text-primary">{selectedGroupName}</span>
             </DialogTitle>
           </DialogHeader>
@@ -291,27 +350,19 @@ const ReferralManagementPage = () => {
               viewingUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="border p-3 rounded-md flex justify-between items-center text-sm bg-gray-50 dark:bg-gray-800"
+                  className="flex items-center justify-between rounded-md border border-border bg-muted/40 p-3 text-sm"
                 >
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {user.name}
-                    </p>
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {user.email}
-                    </p>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-muted-foreground">{user.email}</p>
                   </div>
                   {user.role && (
-                    <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                      {user.role}
-                    </span>
+                    <AdminStatusBadge label={user.role} tone="neutral" />
                   )}
                 </div>
               ))
             ) : (
-              <p className="text-center text-muted-foreground">
-                No users found.
-              </p>
+              <p className="text-center text-muted-foreground">No users found.</p>
             )}
           </div>
 
@@ -322,9 +373,8 @@ const ReferralManagementPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AdminPageContent>
   );
 };
 
 export default ReferralManagementPage;
-

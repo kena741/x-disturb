@@ -1,12 +1,27 @@
 "use client";
 
 import React, { useState } from "react";
-import { updateUserStatus, useFetchUsers } from "@/app/api/user-management-api";
+import { toast } from "react-toastify";
+import { updateUserStatus, useFetchUsers, deleteUser } from "@/app/api/user-management-api";
 import UserManagementTable from "@/components/dashboard/user-management-table ";
-import { deleteUser } from "@/app/api/user-management-api";
-import {toast} from 'react-toastify'
-// inside component
+import { AdminPageContent } from "@/components/admin/admin-layout";
+import {
+  AdminFilterPanel,
+  AdminSearchInput,
+  AdminFilterSelect,
+} from "@/components/admin/admin-filter-panel";
 
+const ROLE_OPTIONS = [
+  { value: "admin", label: "Admin" },
+  { value: "user", label: "User" },
+];
+
+const REFERRAL_OPTIONS = [
+  { value: "Orthodox Tewahedo", label: "Orthodox Tewahedo" },
+  { value: "Protestant", label: "Protestant" },
+  { value: "Mosque", label: "Mosque" },
+  { value: "Library", label: "Library" },
+];
 
 const Page = () => {
   const { users, loading } = useFetchUsers();
@@ -29,7 +44,6 @@ const Page = () => {
     const matchesReferral = referralFilter
       ? user.referralCode === referralFilter
       : true;
-
     return matchesSearch && matchesRole && matchesReferral;
   });
 
@@ -41,49 +55,37 @@ const Page = () => {
   };
 
   return (
-    <div className="flex flex-col gap-8 bg-white dark:bg-inherit text-gray-950 dark:text-white p-4">
-      <p className="text-3xl font-bold leading-5">Users Management</p>
-
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <input
-          type="text"
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-10 w-full md:w-1/3 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-950 dark:text-white placeholder:text-gray-400 px-3 border-none outline-none focus:outline-none"
+    <AdminPageContent>
+      <AdminFilterPanel>
+        <AdminSearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
           placeholder="Search by name or email"
+          className="md:flex-1"
         />
-
-        <select
+        <AdminFilterSelect
           value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          className="h-10 w-full md:w-1/4 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-950 dark:text-white px-3 border-none outline-none focus:outline-none"
-        >
-          <option value="">All Roles</option>
-          <option value="admin">Admin</option>
-          <option value="user">User</option>
-        </select>
-
-        <select
+          onChange={setRoleFilter}
+          options={ROLE_OPTIONS}
+          placeholder="All Roles"
+          className="md:w-40"
+        />
+        <AdminFilterSelect
           value={referralFilter}
-          onChange={(e) => setReferralFilter(e.target.value)}
-          className="h-10 w-full md:w-1/4 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-950 dark:text-white px-3 border-none outline-none focus:outline-none"
-        >
-          <option value="">All Referral Codes</option>
-          <option value="Orthodox Tewahedo">Orthodox Tewahedo</option>
-          <option value="Protestant">Protestant</option>
-          <option value="Mosque">Mosque</option>
-          <option value="Library">Library</option>
-        </select>
-      </div>
+          onChange={setReferralFilter}
+          options={REFERRAL_OPTIONS}
+          placeholder="All Referral Codes"
+          className="md:w-48"
+        />
+      </AdminFilterPanel>
 
-      {/* User Table */}
       <UserManagementTable
         users={filteredUsers}
         handleToggle={handleToggleStatus}
         isLoading={loading}
         handleDelete={handleDelete}
       />
-    </div>
+    </AdminPageContent>
   );
 };
 

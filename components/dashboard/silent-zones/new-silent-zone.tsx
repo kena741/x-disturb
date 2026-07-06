@@ -278,9 +278,6 @@ export default function CreateSilentZone() {
             <Button
               disabled={isAdding}
               type="submit"
-              className={`${
-                isAdding ? "bg-[#e78064]" : "bg-[#E66641]"
-              } text-white cursor-pointer`}
             >
               {isAdding ? "Creating Zone" : "Create Zone"}
             </Button>

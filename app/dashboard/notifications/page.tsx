@@ -1,10 +1,11 @@
 import Notifications from "@/components/dashboard/notification/notification";
+import { AdminPageContent } from "@/components/admin/admin-layout";
 
 const page = () => {
   return (
-    <div>
+    <AdminPageContent>
       <Notifications />
-    </div>
+    </AdminPageContent>
   );
 };
 

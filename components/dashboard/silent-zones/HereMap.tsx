@@ -394,7 +394,7 @@ const HereMap = ({
               type="button"
               onClick={handleSearch}
               disabled={isLoading || isMapLoading || isLocating || !searchQuery}
-              className="bg-[#E66641] hover:bg-[#d85530] text-white flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -409,7 +409,7 @@ const HereMap = ({
               onClick={handleGetCurrentLocation}
               disabled={isLoading || isMapLoading || isLocating}
               variant="outline"
-              className="border-[#E66641] text-[#E66641] hover:bg-[#E66641]/10 hover:text-[#E66641] flex items-center gap-1 flex-1 sm:flex-none"
+              className="border-primary text-primary hover:bg-primary/10 flex items-center gap-1 flex-1 sm:flex-none"
             >
               {isLocating ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1" />

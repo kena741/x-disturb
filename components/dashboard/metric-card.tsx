@@ -21,12 +21,13 @@ const MetricCard = ({
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
-        {change ?? (
+        {change && (
           <p
             className={cn(
               "text-xs",
-              changeType === "positive" && "text-green-500",
-              changeType === "negative" && "text-red-500"
+              changeType === "positive" && "text-emerald-600",
+              changeType === "negative" && "text-red-600",
+              changeType === "neutral" && "text-muted-foreground"
             )}
           >
             {change}

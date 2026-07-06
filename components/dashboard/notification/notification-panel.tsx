@@ -78,7 +78,7 @@ export default function NotificationPanel() {
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
               <Badge
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-[#E66641]"
+                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-primary"
                 variant="destructive"
               >
                 {unreadCount}
@@ -88,10 +88,10 @@ export default function NotificationPanel() {
         </PopoverTrigger>
 
         <PopoverContent
-          className="w-[380px] p-0 bg-white border-gray-200 scrollbar-hide"
+          className="w-[380px] p-0 bg-popover border-border scrollbar-hide"
           align="end"
         >
-          <div className="flex items-center justify-between p-4 border-b border-gray-300 scrollbar-hide">
+          <div className="flex items-center justify-between p-4 border-b border-border scrollbar-hide">
             <h2 className="text-lg font-semibold">Notifications</h2>
             <div className="flex gap-2">
               {notifications.length > 0 && (
@@ -99,7 +99,7 @@ export default function NotificationPanel() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowClearAlert(true)}
-                  className="text-sm text-[#E66641] hover:text-[#C4502F] hover:bg-[#FDE8E4]"
+                  className="text-sm text-primary hover:text-primary/80"
                 >
                   Clear notification history
                 </Button>
@@ -116,8 +116,8 @@ export default function NotificationPanel() {
               notifications.slice(0, 3).map((notification) => (
                 <div
                   key={notification.id}
-                  className={`flex items-start gap-3 p-4 border-b border-gray-300 hover:bg-[#FDE8E4] transition-colors ${
-                    !notification.read ? "bg-[#FDE8E4]" : ""
+                  className={`flex items-start gap-3 p-4 border-b border-border hover:bg-muted/50 transition-colors ${
+                    !notification.read ? "bg-primary/5" : ""
                   }`}
                 >
                   <Avatar className="h-10 w-10">
@@ -125,7 +125,7 @@ export default function NotificationPanel() {
                       src={`/placeholder.svg?height=40&width=40`}
                       alt={notification.user}
                     />
-                    <AvatarFallback className="bg-[#E66641] text-white">
+                    <AvatarFallback className="bg-primary/10 text-primary">
                       {notification.user
                         .split(" ")
                         .map((n) => n[0])
@@ -154,12 +154,12 @@ export default function NotificationPanel() {
                         </button>
                       </DropdownMenuTrigger>
 
-                      <DropdownMenuContent className="bg-white" align="end">
+                      <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() =>
                             setNotificationToDelete(notification.id)
                           }
-                          className="text-[#E66641] focus:text-[#E66641] focus:bg-[#FDE8E4]"
+                          className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
@@ -181,18 +181,18 @@ export default function NotificationPanel() {
           </div>
 
           {notifications.length > 0 && (
-            <div className="p-3 border-t flex justify-between">
+            <div className="p-3 border-t border-border flex justify-between">
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-sm hover:text-[#E66641] hover:bg-[#FDE8E4]"
+                className="text-sm"
                 onClick={handleMarkAllAsRead}
               >
                 Mark all as read
               </Button>
               <Link
                 href="/dashboard/notifications"
-                className="text-sm text-[#E66641] hover:text-[#C4502F] hover:underline flex items-center"
+                className="text-sm text-primary hover:text-primary/80 hover:underline flex items-center"
                 onClick={() => setIsOpen(false)}
               >
                 See all notification
@@ -204,7 +204,7 @@ export default function NotificationPanel() {
 
       {/* Clear All Notifications Alert */}
       <AlertDialog open={showClearAlert} onOpenChange={setShowClearAlert}>
-        <AlertDialogContent className="bg-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Clear all notifications?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -214,10 +214,7 @@ export default function NotificationPanel() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleClearAll}
-              className="bg-[#E66641] hover:bg-[#C4502F] text-white"
-            >
+            <AlertDialogAction onClick={handleClearAll}>
               Clear all
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -243,7 +240,6 @@ export default function NotificationPanel() {
                 notificationToDelete &&
                 handleDeleteNotification(notificationToDelete)
               }
-              className="bg-[#E66641] hover:bg-[#C4502F]"
             >
               Delete
             </AlertDialogAction>

@@ -24,6 +24,11 @@ import {
   SubscriptionPlan,
   SubscriptionPlanInput,
 } from "@/app/api/subscription-plans-api";
+import { AdminPageContent } from "@/components/admin/admin-layout";
+import { AdminPageHeaderActions } from "@/components/admin/admin-page-header-provider";
+import { adminHeaderButtonClassName } from "@/components/admin/admin-page-header";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 const CATEGORIES = ["Christian", "Orthodox", "Protestant", "Mosque", "Library", "General"];
@@ -459,25 +464,19 @@ export default function SubscriptionPlansPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-            Subscription Plans
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Manage pricing plans shown to users in the X-Disturb app.
-          </p>
-        </div>
-        <button
+    <AdminPageContent>
+      <AdminPageHeaderActions>
+        <Button
           onClick={handleOpenAdd}
-          className="flex items-center gap-2 self-start rounded-xl bg-[#E66641] px-4 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-[#d4502e] sm:self-auto"
+          className={cn(
+            adminHeaderButtonClassName(),
+            "gap-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
+          )}
         >
           <Plus className="h-4 w-4" />
           Add Plan
-        </button>
-      </div>
+        </Button>
+      </AdminPageHeaderActions>
 
       {/* Metrics */}
       <div className="grid gap-4 sm:grid-cols-3">
@@ -563,6 +562,6 @@ export default function SubscriptionPlansPage() {
           loading={deleting}
         />
       )}
-    </div>
+    </AdminPageContent>
   );
 }

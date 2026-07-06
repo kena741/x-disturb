@@ -314,9 +314,6 @@ export default function UpdateSilentZone() {
             <Button
               disabled={isEditing}
               type="submit"
-              className={`${
-                isEditing ? "bg-[#bb958b]" : "bg-[#E66641]"
-              } text-white cursor-pointer`}
             >
               {isEditing ? "Saving" : "Save"}
             </Button>

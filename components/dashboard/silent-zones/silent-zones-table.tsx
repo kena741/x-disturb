@@ -8,7 +8,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import {
+  AdminTableShell,
+  AdminDataTableEmpty,
+  AdminLoadingRow,
+} from "@/components/admin/data-table";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
+import { getUserStatusTone } from "@/lib/admin-status-badge";
 
 import { Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -23,7 +29,6 @@ import { db } from "@/app/firebase/config";
 import { useEffect, useState } from "react";
 import { ConfirmRemovalDialog } from "./ConfirmRemove";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface SilentZone {
   name: string;
@@ -43,35 +48,7 @@ export default function SilentZones() {
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [zoneToRemove, setZoneToRemove] = useState<string | null>(null);
-  const skeletonRows = Array.from({ length: 5 }).map((_, idx) => (
-    <TableRow key={`skeleton-${idx}`}>
-      <TableCell className="px-6 py-4">
-        <Skeleton className="h-4 w-32 rounded-md" />
-      </TableCell>
-      <TableCell className="px-6 py-4">
-        <Skeleton className="h-4 w-20 rounded-md" />
-      </TableCell>
-      <TableCell className="px-6 py-4">
-        <Skeleton className="h-4 w-16 rounded-md" />
-      </TableCell>
-      <TableCell className="px-6 py-4">
-        <Skeleton className="h-4 w-40 rounded-md" />
-      </TableCell>
-      <TableCell className="px-6 py-4">
-        <Skeleton className="h-6 w-16 rounded-full" />
-      </TableCell>
-      <TableCell className="px-6 py-4">
-        <Skeleton className="h-4 w-48 rounded-md" />
-      </TableCell>
-      <TableCell className="px-6 py-4 text-center">
-        <div className="flex justify-center gap-2">
-          <Skeleton className="h-8 w-8 rounded-full" />
-          <Skeleton className="h-8 w-8 rounded-full" />
-        </div>
-      </TableCell>
-    </TableRow>
-  ));
-  
+
   useEffect(() => {
     const silentZonesQuery = query(collection(db, "silent_zones"));
     const unsubscribe = onSnapshot(
@@ -106,75 +83,52 @@ export default function SilentZones() {
   console.log(silentZones);
 
   return (
-    <div className="border rounded-lg border-gray-300 overflow-auto">
-      <Table className="min-w-full divide-y divide-gray-300">
-        <TableHeader className="bg-muted sticky border-gray-300 top-0 z-10">
-          <TableRow>
-            <TableHead className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-              Name
-            </TableHead>
-            <TableHead className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-              Type
-            </TableHead>
-            <TableHead className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-              Radius (m)
-            </TableHead>
-            <TableHead className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-              Center Coordinates
-            </TableHead>
-            <TableHead className="px-6 py-3 text-sm font-semibold text-gray-700">
-              Status
-            </TableHead>
-            <TableHead className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
-              Description
-            </TableHead>
-            <TableHead className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
-              Actions
-            </TableHead>
+    <AdminTableShell>
+      <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="text-muted-foreground">Name</TableHead>
+            <TableHead className="text-muted-foreground">Type</TableHead>
+            <TableHead className="text-muted-foreground">Radius (m)</TableHead>
+            <TableHead className="text-muted-foreground">Center Coordinates</TableHead>
+            <TableHead className="text-muted-foreground">Status</TableHead>
+            <TableHead className="text-muted-foreground">Description</TableHead>
+            <TableHead className="text-center text-muted-foreground">Actions</TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody className="bg-white divide-y divide-gray-100">
-          {loading ? skeletonRows : silentZones && silentZones.length > 0 ? (
+        <TableBody>
+          {loading ? (
+            <AdminLoadingRow columns={7} />
+          ) : silentZones.length > 0 ? (
             silentZones.map((zone) => (
-              <TableRow
-                key={zone.id}
-                className="hover:bg-muted/50 transition-colors"
-              >
-                <TableCell className="px-6 py-4 font-medium text-gray-900">
-                  {zone.name || "N/A"}
-                </TableCell>
-                <TableCell className="px-6 py-4 text-gray-600 capitalize">
-                  {zone.type}
-                </TableCell>
-                <TableCell className="px-6 py-4 text-gray-600">
+              <TableRow key={zone.id}>
+                <TableCell className="font-medium">{zone.name || "N/A"}</TableCell>
+                <TableCell className="capitalize text-muted-foreground">{zone.type}</TableCell>
+                <TableCell className="text-muted-foreground">
                   {zone.radius.toLocaleString()}
                 </TableCell>
-                <TableCell className="px-6 py-4 text-gray-600">
+                <TableCell className="text-muted-foreground font-mono text-xs">
                   {Number(zone.center.latitude).toFixed(6)},{" "}
                   {Number(zone.center.longitude).toFixed(6)}
                 </TableCell>
-
-                <TableCell className="px-6 py-4">
-                  <Badge
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      zone.isActive
-                        ? "bg-green-100 text-green-800"
-                        : "bg-orange-100 text-orange-800"
-                    }`}
-                  >
-                    {zone.isActive ? "Active" : "Inactive"}
-                  </Badge>
+                <TableCell>
+                  <AdminStatusBadge
+                    label={zone.isActive ? "Active" : "Inactive"}
+                    tone={getUserStatusTone(zone.isActive)}
+                  />
                 </TableCell>
-                <TableCell className="px-6 py-4 text-gray-600 max-w-[250px] truncate">
+                <TableCell className="max-w-[250px] truncate text-muted-foreground">
                   {zone.description || "N/A"}
                 </TableCell>
-                <TableCell className="px-6 py-4 text-center space-x-2">
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-1">
                   <Link
                     href={`silent-zones/edit-zone?id=${zone.id}`}
-                    className="inline-flex items-center justify-center p-2 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900 dark:hover:bg-blue-800 transition-colors"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     aria-label="Edit Zone"
                   >
-                    <Edit className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                    <Edit className="h-4 w-4" />
                   </Link>
 
                   <Button
@@ -184,26 +138,21 @@ export default function SilentZones() {
                     }}
                     variant="ghost"
                     size="icon"
-                    className="inline-flex items-center justify-center p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900 transition-colors"
+                    className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                     aria-label="Delete Zone"
                   >
-                    <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
           ) : (
-            <TableRow>
-              <TableCell
-                colSpan={7}
-                className="text-center text-gray-500 py-12"
-              >
-                No Silent Zones Added Yet!
-              </TableCell>
-            </TableRow>
+            <AdminDataTableEmpty colSpan={7} message="No silent zones added yet" />
           )}
         </TableBody>
       </Table>
+      </div>
 
       {zoneToRemove && (
         <ConfirmRemovalDialog
@@ -215,6 +164,6 @@ export default function SilentZones() {
           }}
         />
       )}
-    </div>
+    </AdminTableShell>
   );
 }

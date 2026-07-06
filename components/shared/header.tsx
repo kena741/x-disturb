@@ -1,69 +1,44 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { doc, getDoc } from "firebase/firestore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu";
-// import { useRouter } from "next/navigation"; // add at the top
-import { auth } from "@/app/firebase/config";
+import { Skeleton } from "../ui/skeleton";
+import { auth, db } from "@/app/firebase/config";
 import { useAuthChecker } from "@/hooks/useAuthChecker";
 import { session } from "@/lib/sessionStorage";
-import { signOut } from "firebase/auth";
-import { Skeleton } from "../ui/skeleton";
-
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/app/firebase/config";
 import NotificationPanel from "../dashboard/notification/notification-panel";
 import { useAdminContext } from "../context-provider";
-import Link from "next/link";
+import { AdminThemeToggle } from "../admin/admin-theme-toggle";
+import { AdminRouteHeader } from "../admin/admin-route-header";
+
+interface AdminProfile {
+  firstName?: string;
+  lastName?: string;
+}
 
 export const Header = () => {
-  // const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  // const router = useRouter();
-
-  /* eslint-disable */
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<AdminProfile | null>(null);
   const [fetchLoading, setFetchLoading] = useState(true);
   const { triggerRefetch } = useAdminContext();
-
-  const handleLogout = () => {
-    signOut(auth);
-    session.clear();
-  };
-
   const id = session?.getItem("userId") || "admin_id";
-
   const { user, loading } = useAuthChecker();
-  const username = user?.email?.split("@")[0] ?? "";
-  const capitalizedInitials = username
-    ? username
-        .split(".")
-        .map((word) => word[0]?.toUpperCase() ?? "")
-        .join("")
-    : "U";
 
   useEffect(() => {
-    if (loading) return; // Wait for auth to initialize
+    if (loading) return;
 
     const fetchAdminProfile = async () => {
       if (!user) {
-        console.log("No authenticated user, skipping admin profile fetch.");
         setFetchLoading(false);
         return;
       }
-      
+
       try {
         const docRef = doc(db, "admin_profile", id);
-        const docSnap = await getDoc(docRef); // Await the promise
+        const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setProfileData(docSnap.data());
-          console.log("Fetched profile data:", docSnap.data());
-        } else {
-          console.log("No such document!");
+          setProfileData(docSnap.data() as AdminProfile);
         }
       } catch (error) {
         console.error("Error fetching admin profile:", error);
@@ -75,38 +50,43 @@ export const Header = () => {
     fetchAdminProfile();
   }, [id, triggerRefetch, user, loading]);
 
-  console.log(profileData);
+  const initials = profileData?.firstName?.[0]?.toUpperCase() ?? "A";
 
   return (
-    <header className="border-b border-gray-200 flex justify-end">
-      <div className="container px-4 py-4 flex justify-end items-center">
-        <div className="flex items-center gap-4">
+    <header className="sticky top-0 z-30 min-h-[var(--header-height)] border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="flex min-h-[var(--header-height)] items-center justify-between gap-4 px-4 py-2 md:px-8">
+        <AdminRouteHeader />
+        <div className="flex shrink-0 items-center gap-3">
+          <AdminThemeToggle />
           <NotificationPanel />
 
-          <Link href="/dashboard/profile" className="px-4">
+          <Link
+            href="/dashboard/profile"
+            className="flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             {loading || fetchLoading ? (
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-10  bg-[#E66641]/20 w-10 rounded-full" />
-                <div className="hidden md:block space-y-2">
-                  <Skeleton className="h-4 w-28 bg-[#E66641]/20 rounded-md" />
-                  <Skeleton className="h-3 w-20 bg-[#E66641]/20 rounded-md" />
+              <>
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="hidden md:block space-y-1.5">
+                  <Skeleton className="h-3.5 w-24 rounded-md" />
+                  <Skeleton className="h-3 w-16 rounded-md" />
                 </div>
-              </div>
+              </>
             ) : (
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarFallback className="bg-orange-500 text-white">
-                    {profileData?.firstName[0]?.toUpperCase()}
+              <>
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block text-left">
-                  <div className="font-medium capitalize">
-                    {profileData?.lastName[0]?.toUpperCase()}.{" "}
+                  <div className="text-sm font-medium text-foreground capitalize">
+                    {profileData?.lastName?.[0]?.toUpperCase()}.{" "}
                     {profileData?.firstName}
                   </div>
-                  <div className="text-xs text-gray-500">Administrator</div>
+                  <div className="text-xs text-muted-foreground">Administrator</div>
                 </div>
-              </div>
+              </>
             )}
           </Link>
         </div>

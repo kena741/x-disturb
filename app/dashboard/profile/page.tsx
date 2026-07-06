@@ -34,6 +34,7 @@ import { db } from "@/app/firebase/config";
 import Image from "next/image";
 import { useAdminContext } from "@/components/context-provider";
 import ProfileSkeleton from "@/components/dashboard/profile/ProfileSkeleton";
+import { AdminPageContent } from "@/components/admin/admin-layout";
 
 // Define the Zod schema for form validation
 const profileSchema = z.object({
@@ -134,14 +135,11 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex">
-      <main className="max-w-4xl">
-        <h1 className="text-2xl font-bold mb-6">My profile</h1>
+    <AdminPageContent wide>
+      {loading ? <ProfileSkeleton /> : ""}
 
-        {loading ? <ProfileSkeleton /> : ""}
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-4xl space-y-8">
             {/* Basic Info */}
             <section>
               <h2 className="text-lg font-medium mb-4">Basic Info</h2>
@@ -375,17 +373,12 @@ export default function ProfilePage() {
             {/* Action buttons */}
 
             <div className="flex space-x-4">
-              <Button
-                type="submit"
-                className="bg-[#e76f51] hover:bg-[#e76f51]/90 text-white"
-                disabled={form.formState.isSubmitting}
-              >
+              <Button type="submit" disabled={form.formState.isSubmitting}>
                 {submitting ? "Saving changes" : "Save changes"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className="border-[#E66641]"
                 onClick={() => router.push("/dashboard")}
               >
                 Cancel
@@ -393,7 +386,6 @@ export default function ProfilePage() {
             </div>
           </form>
         </Form>
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }

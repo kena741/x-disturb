@@ -6,6 +6,8 @@ import {
 } from "@/store/metrics/metricsApi";
 import MetricCard from "@/components/dashboard/metric-card";
 import ZoneActivityChart from "@/components/dashboard/report/zone-activity-chart";
+import { AdminPageContent } from "@/components/admin/admin-layout";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardHeader,
@@ -55,17 +57,9 @@ export default function Reports() {
     }) ?? [];
 
   return (
-    <div className="space-y-6 scrollbar-hide">
+    <AdminPageContent>
       <div>
-        <h1 className="text-2xl font-medium tracking-tight">Report</h1>
-        <p className="text-muted-foreground">
-          Access detailed analytics for user growth, zone activity and payment
-          transactions for informed decision making.
-        </p>
-      </div>
-
-      <div>
-        <h2 className="mb-4 text-xl font-semibold">Overviews</h2>
+        <h2 className="admin-section-title mb-4">Overviews</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             title="Total User Growths"
@@ -220,20 +214,16 @@ export default function Reports() {
 
       {/* Export Buttons */}
       <div className="flex justify-end gap-4 mt-6">
-        <button
+        <Button
           onClick={() => exportCSV(timeData, "user-growth-report.csv")}
-          className="px-5 py-2 rounded-md text-white bg-[#e66641] hover:bg-[#d05535] transition-colors duration-200 shadow-sm hover:shadow-md"
         >
           Export Data (CSV)
-        </button>
-        <button
-          onClick={() => window.print()}
-          className="px-5 py-2 rounded-md text-[#e66641] border border-[#e66641] hover:bg-[#e66641] hover:text-white transition-colors duration-200 shadow-sm hover:shadow-md"
-        >
+        </Button>
+        <Button variant="outline" onClick={() => window.print()}>
           Download Report (Print View)
-        </button>
+        </Button>
       </div>
-    </div>
+    </AdminPageContent>
   );
 }
 
