@@ -15,13 +15,15 @@ import { db } from "@/app/firebase/config";
 // User interface (adjust fields based on your needs)
 export interface User {
   id: string;
-  name: string;
-  email: string;
+  name?: string;
+  displayName?: string;
+  email?: string;
   isActive: boolean;
   createdAt?: Timestamp;
   lastLogin?: Timestamp;
   role?: string;
   referralCode?: string;
+  uid?: string;
 }
 
 // Function to fetch users
@@ -36,10 +38,15 @@ export const useFetchUsers = () => {
     const unsubscribe = onSnapshot(
       usersQuery,
       (snapshot) => {
-        const usersData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as User[];
+        const usersData = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            name: data.name || data.displayName || "",
+            displayName: data.displayName || data.name || "",
+          };
+        }) as User[];
 
         setUsers(usersData);
         setLoading(false);

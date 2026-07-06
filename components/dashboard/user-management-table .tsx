@@ -63,7 +63,7 @@ const UserManagementTable = ({
               users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="text-sm font-medium">
-                    {user.name || "N/A"}
+                    {user.name || user.displayName || "N/A"}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {user.email || "N/A"}

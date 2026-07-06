@@ -4,6 +4,8 @@ import { Download } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { useTransaction } from "@/hooks/useTransaction";
+import { useSubscriptionPlans } from "@/hooks/useSubscriptionPlans";
+import { useFetchUsers } from "@/app/api/user-management-api";
 import {
   Table,
   TableBody,
@@ -25,7 +27,8 @@ import { getTransactionStatusTone } from "@/lib/admin-status-badge";
 import {
   formatAdminDate,
   formatAdminAmount,
-  truncateId,
+  getPlanLabel,
+  getUserLabel,
 } from "@/lib/admin-display";
 
 const STATUS_OPTIONS = ["All", "success", "pending", "failed"] as const;
@@ -33,6 +36,8 @@ type FilterStatus = (typeof STATUS_OPTIONS)[number];
 
 export default function TransactionTable() {
   const { transactions, loading } = useTransaction();
+  const { plans } = useSubscriptionPlans();
+  const { users } = useFetchUsers();
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("All");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -59,8 +64,8 @@ export default function TransactionTable() {
   const handleExport = () => {
     const exportData = filtered.map((tx) => ({
       Date: formatAdminDate(tx.created_at),
-      "User ID": tx.user_id,
-      "Plan ID": tx.plan_id,
+      User: getUserLabel(tx.user_id, users, tx.user_label),
+      Plan: getPlanLabel(tx.plan_id, plans, tx.plan_label),
       Amount: formatAdminAmount(tx.amount, tx.currency),
       "TX Ref": tx.tx_ref,
       Status: tx.status,
@@ -79,7 +84,7 @@ export default function TransactionTable() {
     label: status,
     count:
       status === "All"
-        ? undefined
+        ? transactions.length
         : transactions.filter(
             (tx) => tx.status.toLowerCase() === status.toLowerCase()
           ).length,
@@ -102,7 +107,7 @@ export default function TransactionTable() {
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="text-muted-foreground">Date</TableHead>
-                <TableHead className="text-muted-foreground">User ID</TableHead>
+                <TableHead className="text-muted-foreground">User</TableHead>
                 <TableHead className="text-muted-foreground">Plan</TableHead>
                 <TableHead className="text-muted-foreground">Amount</TableHead>
                 <TableHead className="text-muted-foreground">TX Ref</TableHead>
@@ -127,10 +132,12 @@ export default function TransactionTable() {
                     <TableCell className="text-sm">
                       {formatAdminDate(tx.created_at)}
                     </TableCell>
-                    <TableCell className="font-mono text-sm text-muted-foreground">
-                      {truncateId(tx.user_id, 12)}
+                    <TableCell className="text-sm">
+                      {getUserLabel(tx.user_id, users, tx.user_label)}
                     </TableCell>
-                    <TableCell className="text-sm">{tx.plan_id}</TableCell>
+                    <TableCell className="text-sm">
+                      {getPlanLabel(tx.plan_id, plans, tx.plan_label)}
+                    </TableCell>
                     <TableCell className="text-sm font-medium">
                       {formatAdminAmount(tx.amount, tx.currency)}
                     </TableCell>

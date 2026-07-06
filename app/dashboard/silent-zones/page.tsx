@@ -2,10 +2,8 @@ import Link from "next/link";
 import SilentZones from "@/components/dashboard/silent-zones/silent-zones-table";
 import { AdminPageContent } from "@/components/admin/admin-layout";
 import { AdminPageHeaderActions } from "@/components/admin/admin-page-header-provider";
-import { adminHeaderButtonClassName } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const page = () => {
   return (
@@ -13,14 +11,12 @@ const page = () => {
       <AdminPageHeaderActions>
         <Button
           asChild
-          className={cn(
-            adminHeaderButtonClassName(),
-            "border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
-          )}
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 text-primary hover:bg-transparent hover:text-primary/80"
         >
-          <Link href="/dashboard/silent-zones/new-zone">
-            <Plus className="h-4 w-4" />
-            Add New Zone
+          <Link href="/dashboard/silent-zones/new-zone" aria-label="Add new zone">
+            <Plus className="h-5 w-5" />
           </Link>
         </Button>
       </AdminPageHeaderActions>

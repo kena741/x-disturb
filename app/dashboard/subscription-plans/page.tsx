@@ -5,15 +5,13 @@ import {
   Plus,
   Pencil,
   Trash2,
-  ToggleLeft,
-  ToggleRight,
   CreditCard,
   Calendar,
   Tag,
   Loader2,
-  X,
-  Check,
   AlertTriangle,
+  Layers,
+  CheckCircle2,
 } from "lucide-react";
 import { useSubscriptionPlans } from "@/hooks/useSubscriptionPlans";
 import {
@@ -26,11 +24,33 @@ import {
 } from "@/app/api/subscription-plans-api";
 import { AdminPageContent } from "@/components/admin/admin-layout";
 import { AdminPageHeaderActions } from "@/components/admin/admin-page-header-provider";
-import { adminHeaderButtonClassName } from "@/components/admin/admin-page-header";
+import { AdminStatCard } from "@/components/admin/admin-stat-card";
+import { AdminFilterPills } from "@/components/admin/admin-filter-panel";
+import { AdminStatusBadge } from "@/components/admin/admin-status-badge";
+import { AdminErrorAlert } from "@/components/admin/admin-error-alert";
+import { getUserStatusTone } from "@/lib/admin-status-badge";
+import { formatAdminCount } from "@/lib/admin-display";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// ─── helpers ────────────────────────────────────────────────────────────────
 const CATEGORIES = ["Christian", "Orthodox", "Protestant", "Mosque", "Library", "General"];
 const CURRENCIES = ["ETB", "USD"];
 
@@ -44,8 +64,7 @@ const emptyForm = (): SubscriptionPlanInput => ({
   sortOrder: 0,
 });
 
-// ─── Plan Card ───────────────────────────────────────────────────────────────
-const PlanCard = ({
+function PlanCard({
   plan,
   onEdit,
   onDelete,
@@ -55,96 +74,105 @@ const PlanCard = ({
   onEdit: (p: SubscriptionPlan) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string, current: boolean) => void;
-}) => (
-  <div className="relative flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
-    {/* Status badge */}
-    <span
-      className={`absolute right-4 top-4 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-        plan.isActive
-          ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
-          : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-      }`}
-    >
-      {plan.isActive ? "Active" : "Inactive"}
-    </span>
+}) {
+  return (
+    <Card className="flex flex-col border-border shadow-sm">
+      <CardHeader className="space-y-4 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
+              <CreditCard className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <CardTitle className="truncate text-base font-semibold">
+                {plan.category}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Sort order {plan.sortOrder}
+              </p>
+            </div>
+          </div>
+          <AdminStatusBadge
+            label={plan.isActive ? "Active" : "Inactive"}
+            tone={getUserStatusTone(plan.isActive)}
+          />
+        </div>
 
-    {/* Header */}
-    <div className="flex items-start gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E66641]/10">
-        <CreditCard className="h-5 w-5 text-[#E66641]" />
-      </div>
-      <div>
-        <h3 className="font-semibold text-gray-900 dark:text-white">{plan.category}</h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Sort #{plan.sortOrder}</p>
-      </div>
-    </div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-3xl font-bold tracking-tight text-foreground">
+            {plan.price.toLocaleString()}
+          </span>
+          <span className="text-sm font-medium text-muted-foreground">
+            {plan.currency}
+          </span>
+        </div>
+      </CardHeader>
 
-    {/* Price */}
-    <div className="flex items-end gap-1">
-      <span className="text-3xl font-bold text-gray-900 dark:text-white">{plan.price}</span>
-      <span className="mb-1 text-sm font-medium text-gray-500">{plan.currency}</span>
-    </div>
+      <CardContent className="flex flex-1 flex-col gap-3 pb-3">
+        <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 shrink-0 text-primary" />
+            <span>
+              {plan.durationLabel} · {plan.durationMonths} month
+              {plan.durationMonths !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Tag className="h-4 w-4 shrink-0 text-primary" />
+            <span>Billed in {plan.currency}</span>
+          </div>
+        </div>
+      </CardContent>
 
-    {/* Details */}
-    <div className="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-gray-300">
-      <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-[#E66641]" />
-        <span>{plan.durationLabel}</span>
-        <span className="text-gray-400">·</span>
-        <span>{plan.durationMonths} month{plan.durationMonths !== 1 ? "s" : ""}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <Tag className="h-4 w-4 text-[#E66641]" />
-        <span>{plan.currency}</span>
-      </div>
-    </div>
+      <CardFooter className="mt-auto flex items-center justify-between border-t border-border pt-4">
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={plan.isActive}
+            onCheckedChange={() => onToggle(plan.id, plan.isActive)}
+            aria-label={plan.isActive ? "Deactivate plan" : "Activate plan"}
+          />
+          <span className="text-xs font-medium text-muted-foreground">
+            {plan.isActive ? "Visible" : "Hidden"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            onClick={() => onEdit(plan)}
+            aria-label="Edit plan"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            onClick={() => onDelete(plan.id)}
+            aria-label="Delete plan"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardFooter>
+    </Card>
+  );
+}
 
-    {/* Actions */}
-    <div className="mt-auto flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-700">
-      {/* Toggle active */}
-      <button
-        onClick={() => onToggle(plan.id, plan.isActive)}
-        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 transition hover:text-[#E66641] dark:text-gray-400"
-        title={plan.isActive ? "Deactivate" : "Activate"}
-      >
-        {plan.isActive ? (
-          <ToggleRight className="h-5 w-5 text-green-500" />
-        ) : (
-          <ToggleLeft className="h-5 w-5" />
-        )}
-        {plan.isActive ? "Deactivate" : "Activate"}
-      </button>
-
-      <div className="flex gap-2">
-        <button
-          onClick={() => onEdit(plan)}
-          className="rounded-lg border border-gray-200 p-1.5 text-gray-500 transition hover:border-[#E66641] hover:text-[#E66641] dark:border-gray-600 dark:text-gray-400"
-          title="Edit plan"
-        >
-          <Pencil className="h-4 w-4" />
-        </button>
-        <button
-          onClick={() => onDelete(plan.id)}
-          className="rounded-lg border border-gray-200 p-1.5 text-gray-500 transition hover:border-red-400 hover:text-red-500 dark:border-gray-600 dark:text-gray-400"
-          title="Delete plan"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
-// ─── Modal ───────────────────────────────────────────────────────────────────
-const PlanModal = ({
+function PlanFormDialog({
+  open,
   initial,
   onClose,
   onSave,
 }: {
+  open: boolean;
   initial: (SubscriptionPlan & { _isEdit?: boolean }) | null;
   onClose: () => void;
   onSave: (data: SubscriptionPlanInput, id?: string) => Promise<void>;
-}) => {
+}) {
   const isEdit = Boolean(initial?._isEdit);
   const [form, setForm] = useState<SubscriptionPlanInput>(
     initial
@@ -162,18 +190,31 @@ const PlanModal = ({
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (!open) return;
+    setForm(
+      initial
+        ? {
+            category: initial.category,
+            currency: initial.currency,
+            durationLabel: initial.durationLabel,
+            durationMonths: initial.durationMonths,
+            isActive: initial.isActive,
+            price: initial.price,
+            sortOrder: initial.sortOrder,
+          }
+        : emptyForm()
+    );
+    setErr(null);
+  }, [open, initial]);
+
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value, type } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]:
-        type === "number"
-          ? Number(value)
-          : type === "checkbox"
-          ? (e.target as HTMLInputElement).checked
-          : value,
+      [name]: type === "number" ? Number(value) : value,
     }));
   };
 
@@ -189,7 +230,6 @@ const PlanModal = ({
       await onSave(form, initial?.id);
       onClose();
     } catch (e: unknown) {
-      console.error("Failed to save plan:", e);
       const msg =
         e instanceof Error && e.message.includes("permission")
           ? "Permission denied — Firestore rules may need to be deployed."
@@ -201,56 +241,43 @@ const PlanModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {isEdit ? "Edit Subscription Plan" : "Add Subscription Plan"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-lg gap-0 p-0">
+        <DialogHeader className="border-b border-border px-6 py-4">
+          <DialogTitle>
+            {isEdit ? "Edit subscription plan" : "Add subscription plan"}
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Body */}
         <form onSubmit={handleSubmit} className="space-y-4 p-6">
-          {err && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              {err}
-            </div>
-          )}
+          {err && <AdminErrorAlert title="Could not save plan" message={err} />}
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Category */}
-            <div className="col-span-2 flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                Category
-              </label>
-              <select
-                name="category"
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="category">Category</Label>
+              <Select
                 value={form.category}
-                onChange={handleChange}
-                className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-[#E66641] focus:ring-2 focus:ring-[#E66641]/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, category: value }))
+                }
               >
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="category" className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Price */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                Price
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="price">Price</Label>
+              <Input
+                id="price"
                 type="number"
                 name="price"
                 value={form.price}
@@ -258,173 +285,172 @@ const PlanModal = ({
                 min={0}
                 step={0.01}
                 required
-                className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-[#E66641] focus:ring-2 focus:ring-[#E66641]/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               />
             </div>
 
-            {/* Currency */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                Currency
-              </label>
-              <select
-                name="currency"
+            <div className="space-y-2">
+              <Label htmlFor="currency">Currency</Label>
+              <Select
                 value={form.currency}
-                onChange={handleChange}
-                className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-[#E66641] focus:ring-2 focus:ring-[#E66641]/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, currency: value }))
+                }
               >
-                {CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="currency" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Duration Label */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                Duration Label
-              </label>
-              <input
-                type="text"
+            <div className="space-y-2">
+              <Label htmlFor="durationLabel">Duration label</Label>
+              <Input
+                id="durationLabel"
                 name="durationLabel"
                 value={form.durationLabel}
                 onChange={handleChange}
                 placeholder="e.g. 1 month"
                 required
-                className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-[#E66641] focus:ring-2 focus:ring-[#E66641]/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               />
             </div>
 
-            {/* Duration Months */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                Duration (months)
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="durationMonths">Duration (months)</Label>
+              <Input
+                id="durationMonths"
                 type="number"
                 name="durationMonths"
                 value={form.durationMonths}
                 onChange={handleChange}
                 min={1}
                 required
-                className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-[#E66641] focus:ring-2 focus:ring-[#E66641]/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               />
             </div>
 
-            {/* Sort Order */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                Sort Order
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="sortOrder">Sort order</Label>
+              <Input
+                id="sortOrder"
                 type="number"
                 name="sortOrder"
                 value={form.sortOrder}
                 onChange={handleChange}
                 min={0}
-                className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm outline-none focus:border-[#E66641] focus:ring-2 focus:ring-[#E66641]/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               />
             </div>
 
-            {/* Active toggle */}
-            <div className="flex items-center gap-3 col-span-2">
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-3 sm:col-span-2">
+              <Switch
                 id="isActive"
-                name="isActive"
                 checked={form.isActive}
-                onChange={handleChange}
-                className="h-4 w-4 rounded border-gray-300 accent-[#E66641]"
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({ ...prev, isActive: checked }))
+                }
               />
-              <label htmlFor="isActive" className="text-sm text-gray-700 dark:text-gray-300">
+              <Label htmlFor="isActive" className="font-normal">
                 Active (visible to users)
-              </label>
+              </Label>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-            >
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex items-center gap-2 rounded-lg bg-[#E66641] px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-[#d4502e] disabled:opacity-60"
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4" />
-              )}
-              {isEdit ? "Save Changes" : "Add Plan"}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isEdit ? "Save changes" : "Add plan"}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
-};
+}
 
-// ─── Delete Confirm ──────────────────────────────────────────────────────────
-const DeleteConfirm = ({
+function DeletePlanDialog({
+  open,
   onCancel,
   onConfirm,
   loading,
 }: {
+  open: boolean;
   onCancel: () => void;
   onConfirm: () => void;
   loading: boolean;
-}) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
-      <div className="flex flex-col items-center gap-3 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-          <AlertTriangle className="h-6 w-6 text-red-500" />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Delete Plan?</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          This action is permanent and cannot be undone.
-        </p>
-      </div>
-      <div className="mt-6 flex justify-end gap-3">
-        <button
-          onClick={onCancel}
-          className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={loading}
-          className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-600 disabled:opacity-60"
-        >
-          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-          Delete
-        </button>
-      </div>
-    </div>
-  </div>
-);
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader className="items-center text-center">
+          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+          <DialogTitle>Delete plan?</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            This action is permanent and cannot be undone.
+          </p>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            Delete
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+function PlanCardSkeleton() {
+  return (
+    <Card className="border-border shadow-sm">
+      <CardHeader className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-md" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        </div>
+        <Skeleton className="h-9 w-24" />
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-2/3" />
+      </CardContent>
+      <CardFooter className="border-t border-border pt-4">
+        <Skeleton className="h-8 w-full" />
+      </CardFooter>
+    </Card>
+  );
+}
+
 export default function SubscriptionPlansPage() {
   const { plans, loading } = useSubscriptionPlans();
-
   const [showModal, setShowModal] = useState(false);
-  const [editTarget, setEditTarget] = useState<(SubscriptionPlan & { _isEdit?: boolean }) | null>(null);
+  const [editTarget, setEditTarget] = useState<
+    (SubscriptionPlan & { _isEdit?: boolean }) | null
+  >(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [filterCategory, setFilterCategory] = useState("All");
 
-  // Stats
-  const totalPlans = plans.length;
   const activePlans = plans.filter((p) => p.isActive).length;
   const categories = Array.from(new Set(plans.map((p) => p.category)));
 
@@ -432,6 +458,15 @@ export default function SubscriptionPlansPage() {
     filterCategory === "All"
       ? plans
       : plans.filter((p) => p.category === filterCategory);
+
+  const filterOptions = ["All", ...categories].map((cat) => ({
+    value: cat,
+    label: cat,
+    count:
+      cat === "All"
+        ? plans.length
+        : plans.filter((p) => p.category === cat).length,
+  }));
 
   const handleOpenAdd = () => {
     setEditTarget(null);
@@ -467,72 +502,72 @@ export default function SubscriptionPlansPage() {
     <AdminPageContent>
       <AdminPageHeaderActions>
         <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 text-primary hover:bg-transparent hover:text-primary/80"
           onClick={handleOpenAdd}
-          className={cn(
-            adminHeaderButtonClassName(),
-            "gap-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
-          )}
+          aria-label="Add plan"
         >
-          <Plus className="h-4 w-4" />
-          Add Plan
+          <Plus className="h-5 w-5" />
         </Button>
       </AdminPageHeaderActions>
 
-      {/* Metrics */}
       <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          { label: "Total Plans", value: loading ? "…" : String(totalPlans) },
-          { label: "Active Plans", value: loading ? "…" : String(activePlans) },
-          { label: "Categories", value: loading ? "…" : String(categories.length) },
-        ].map((m) => (
-          <div
-            key={m.label}
-            className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-          >
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{m.label}</p>
-            <p className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">{m.value}</p>
-          </div>
-        ))}
+        <AdminStatCard
+          title="Total plans"
+          value={formatAdminCount(plans.length)}
+          icon={Layers}
+          loading={loading}
+        />
+        <AdminStatCard
+          title="Active plans"
+          value={formatAdminCount(activePlans)}
+          icon={CheckCircle2}
+          loading={loading}
+        />
+        <AdminStatCard
+          title="Categories"
+          value={formatAdminCount(categories.length)}
+          icon={Tag}
+          loading={loading}
+        />
       </div>
 
-      {/* Filter tabs */}
       {!loading && categories.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {["All", ...categories].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setFilterCategory(cat)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                filterCategory === cat
-                  ? "bg-[#E66641] text-white shadow"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        <AdminFilterPills
+          options={filterOptions}
+          value={filterCategory}
+          onChange={setFilterCategory}
+        />
       )}
 
-      {/* Plan grid */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-[#E66641]" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <PlanCardSkeleton key={i} />
+          ))}
         </div>
       ) : filteredPlans.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 py-20 dark:border-gray-700">
-          <CreditCard className="h-10 w-10 text-gray-300 dark:text-gray-600" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">No subscription plans yet.</p>
-          <button
-            onClick={handleOpenAdd}
-            className="mt-1 flex items-center gap-2 rounded-xl bg-[#E66641] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#d4502e]"
-          >
+        <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <CreditCard className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              No subscription plans yet
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Create a plan to show pricing in the X-Disturb app.
+            </p>
+          </div>
+          <Button type="button" onClick={handleOpenAdd} className="gap-2">
             <Plus className="h-4 w-4" />
             Add your first plan
-          </button>
+          </Button>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredPlans.map((plan) => (
             <PlanCard
               key={plan.id}
@@ -545,23 +580,19 @@ export default function SubscriptionPlansPage() {
         </div>
       )}
 
-      {/* Add / Edit Modal */}
-      {showModal && (
-        <PlanModal
-          initial={editTarget}
-          onClose={() => setShowModal(false)}
-          onSave={handleSave}
-        />
-      )}
+      <PlanFormDialog
+        open={showModal}
+        initial={editTarget}
+        onClose={() => setShowModal(false)}
+        onSave={handleSave}
+      />
 
-      {/* Delete confirm */}
-      {deleteId && (
-        <DeleteConfirm
-          onCancel={() => setDeleteId(null)}
-          onConfirm={handleDelete}
-          loading={deleting}
-        />
-      )}
+      <DeletePlanDialog
+        open={Boolean(deleteId)}
+        onCancel={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </AdminPageContent>
   );
 }
