@@ -10,14 +10,6 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import AddressField from "./AddressSuggestion";
 
-/* eslint-disable */
-// Define types for HERE Maps API
-declare global {
-  interface Window {
-    H: any;
-  }
-}
-
 type HereMapProps = {
   onCoordinatesChange: (coords: { lat: string; lng: string }) => void;
   onAddressChange?: (address: string) => void;
@@ -34,9 +26,9 @@ const HereMap = ({
   initialAddress,
 }: HereMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<H.Map | null>(null);
-  const markerRef = useRef<H.map.Marker | null>(null);
-  const circleRef = useRef<H.map.Circle | null>(null);
+  const mapInstance = useRef<InstanceType<NonNullable<Window["H"]>["Map"]> | null>(null);
+  const markerRef = useRef<InstanceType<NonNullable<Window["H"]>["map"]["Marker"]> | null>(null);
+  const circleRef = useRef<InstanceType<NonNullable<Window["H"]>["map"]["Circle"]> | null>(null);
   const platformRef = useRef<any>(null); // To hold the platform instance
   const [coordinates, setCoordinates] = useState<{
     lat: string | null;
@@ -91,9 +83,9 @@ const HereMap = ({
 
         if (!isMounted) return;
 
-        const H = window.H;
+        const here = window.H;
 
-        if (!H) {
+        if (!here) {
           throw new Error("HERE Maps API not loaded");
         }
 
@@ -104,7 +96,7 @@ const HereMap = ({
         }
 
         // Initialize platform with API key
-        platformRef.current = new H.service.Platform({ apikey });
+        platformRef.current = new here.service.Platform({ apikey });
 
         // Create default layers
         const defaultLayers = platformRef.current.createDefaultLayers();
@@ -123,8 +115,8 @@ const HereMap = ({
             }
           : { lat: 9.0572, lng: 38.7592 };
 
-        mapInstance.current = new H.Map(
-          mapRef.current,
+        mapInstance.current = new here.Map(
+          mapRef.current!,
           defaultLayers.vector.normal.map,
           {
             center: mapCenter,
@@ -134,12 +126,12 @@ const HereMap = ({
         );
 
         // Add map events for interactivity (pan/zoom)
-        const behavior = new H.mapevents.Behavior(
-          new H.mapevents.MapEvents(mapInstance.current)
+        const behavior = new here.mapevents.Behavior(
+          new here.mapevents.MapEvents(mapInstance.current)
         );
 
         // Add UI controls
-        H.ui.UI.createDefault(mapInstance.current, defaultLayers);
+        here.ui.UI.createDefault(mapInstance.current, defaultLayers);
 
         // Add tap event listener for placing marker
         mapInstance.current?.addEventListener("tap", (evt: any) => {
@@ -160,7 +152,7 @@ const HereMap = ({
             if (markerRef.current) {
               markerRef.current.setGeometry(coord);
             } else {
-              markerRef.current = new H.map.Marker(coord);
+              markerRef.current = new here.map.Marker(coord);
               mapInstance.current!.addObject(markerRef.current!);
             }
 
@@ -169,7 +161,7 @@ const HereMap = ({
               circleRef.current.setCenter(coord);
               circleRef.current.setRadius(radius);
             } else {
-              circleRef.current = new H.map.Circle(coord, radius, {
+              circleRef.current = new here.map.Circle(coord, radius, {
                 style: {
                   strokeColor: "rgba(255, 0, 0, 0.7)",
                   lineWidth: 2,
@@ -340,7 +332,7 @@ const HereMap = ({
       return;
     }
 
-    const H = window.H;
+    const here = window.H;
     const coord = { lat: +coordinates.lat, lng: +coordinates.lng };
 
     // Update map center
@@ -350,7 +342,7 @@ const HereMap = ({
     if (markerRef.current) {
       markerRef.current.setGeometry(coord);
     } else {
-      markerRef.current = new H.map.Marker(coord);
+      markerRef.current = new here.map.Marker(coord);
       mapInstance.current.addObject(markerRef.current!);
     }
 
@@ -359,7 +351,7 @@ const HereMap = ({
       circleRef.current.setCenter(coord);
       circleRef.current.setRadius(radius);
     } else {
-      circleRef.current = new H.map.Circle(coord, radius, {
+      circleRef.current = new here.map.Circle(coord, radius, {
         style: {
           strokeColor: "rgba(255, 0, 0, 0.7)",
           lineWidth: 2,

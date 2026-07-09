@@ -14,11 +14,13 @@ interface HereMapsApi {
   Map: new (
     element: HTMLElement,
     layer: unknown,
-    options: { zoom: number; center: { lat: number; lng: number } }
+    options: { zoom: number; center: { lat: number; lng: number }; pixelRatio?: number }
   ) => {
     dispose: () => void;
     setCenter: (center: { lat: number; lng: number }) => void;
     addObject: (object: unknown) => void;
+    addEventListener: (type: string, handler: (evt: any) => void) => void;
+    screenToGeo: (x: number, y: number) => { lat: number; lng: number } | null;
   };
   mapevents: {
     Behavior: new (events: unknown) => unknown;
