@@ -5,6 +5,9 @@ COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm config set fetch-retries 5 && \
     pnpm config set fetch-retry-mintimeout 20000 && \
     pnpm config set fetch-retry-maxtimeout 120000 && \
+    pnpm config set network-concurrency 16 && \
+    pnpm config set store-dir /pnpm/store
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 FROM node:20-alpine AS builder
@@ -33,8 +36,6 @@ ENV NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
 ENV NEXT_PUBLIC_HERE_API_KEY=$NEXT_PUBLIC_HERE_API_KEY
 ENV NEXT_PUBLIC_NOTIFICATIONS_END_POINT=$NEXT_PUBLIC_NOTIFICATIONS_END_POINT
 ENV NEXT_PUBLIC_DASHBOARD_DEMO=$NEXT_PUBLIC_DASHBOARD_DEMO
-
-RUN echo "FIREBASE KEY LENGTH: ${#NEXT_PUBLIC_FIREBASE_API_KEY}"
 
 
 ENV NEXT_TELEMETRY_DISABLED=1
