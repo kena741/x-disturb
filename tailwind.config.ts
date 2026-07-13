@@ -74,6 +74,10 @@ const config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        "landing-display": ["var(--font-landing-display)", "sans-serif"],
+        "landing-body": ["var(--font-landing-body)", "sans-serif"],
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -87,11 +91,22 @@ const config = {
           "0%, 100%": { transform: "scaleY(0.4)" },
           "50%": { transform: "scaleY(1.2)" },
         },
+        "silence-ring": {
+          "0%": { transform: "scale(0.72)", opacity: "0.55" },
+          "70%": { opacity: "0.18" },
+          "100%": { transform: "scale(1.35)", opacity: "0" },
+        },
+        "landing-rise": {
+          from: { opacity: "0", transform: "translateY(14px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "bar-bounce": "bar-bounce 1s ease-in-out infinite",
+        "silence-ring": "silence-ring 5.5s ease-out infinite",
+        "landing-rise": "landing-rise 0.7s ease-out both",
       },
     },
   },

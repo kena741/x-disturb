@@ -1,15 +1,29 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { DM_Sans, Syne } from "next/font/google";
+import { LandingPage } from "@/components/landing/landing-page";
+
+const landingDisplay = Syne({
+	subsets: ["latin"],
+	variable: "--font-landing-display",
+	display: "swap",
+});
+
+const landingBody = DM_Sans({
+	subsets: ["latin"],
+	variable: "--font-landing-body",
+	display: "swap",
+});
+
+export const metadata: Metadata = {
+	title: "X-Disturb — Quiet where reverence begins",
+	description:
+		"Silent zones around churches, mosques, and libraries. Your phone stays quiet so sacred and quiet places stay undisturbed.",
+};
 
 export default function Home() {
 	return (
-		<main className="flex min-h-screen items-center justify-center bg-background p-6">
-			<div className="max-w-md text-center">
-				<h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-				<p className="mt-2 text-sm text-muted-foreground">
-					This dashboard will be built soon.
-				</p>
-				<Link href="/auth/login">Login</Link>
-			</div>
-		</main>
+		<div className={`${landingDisplay.variable} ${landingBody.variable}`}>
+			<LandingPage />
+		</div>
 	);
 }
