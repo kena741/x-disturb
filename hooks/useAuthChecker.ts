@@ -1,33 +1,33 @@
 import { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/app/firebase/config";
+import { auth } from "@/firebase/config";
 import { useRouter } from "next/navigation";
 import { session } from "@/lib/sessionStorage";
 
-export function useAuthChecker(redirectPath: string = "/") {
-  const [user, loading, error] = useAuthState(auth);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const router = useRouter();
+export function useAuthChecker(redirectPath: string = "/auth/login") {
+	const [user, loading, error] = useAuthState(auth);
+	const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+	const router = useRouter();
 
-  useEffect(() => {
-    if (loading) return;
+	useEffect(() => {
+		if (loading) return;
 
-    const isSessionAuthenticated = session.getItem("isAuthenticated") === true;
-    const isUserAuthenticated = !!user;
+		const isSessionAuthenticated = session.getItem("isAuthenticated") === true;
+		const isUserAuthenticated = !!user;
 
-    const authenticated = isUserAuthenticated || isSessionAuthenticated;
+		const authenticated = isUserAuthenticated || isSessionAuthenticated;
 
-    setIsAuthenticated(authenticated);
+		setIsAuthenticated(authenticated);
 
-    if (!authenticated) {
-      router.push(redirectPath);
-    }
-  }, [user, loading, router, redirectPath]);
+		if (!authenticated) {
+			router.push(redirectPath);
+		}
+	}, [user, loading, router, redirectPath]);
 
-  return {
-    user,
-    isAuthenticated,
-    loading,
-    error,
-  };
+	return {
+		user,
+		isAuthenticated,
+		loading,
+		error,
+	};
 }
