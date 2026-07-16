@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LandingReveal } from "@/components/landing/landing-reveal";
+import { PlayStoreButton } from "@/components/landing/play-store-button";
 import { SilenceRings } from "@/components/landing/silence-rings";
 
 const steps = [
@@ -107,7 +108,8 @@ export function LandingPage() {
 								respect does not depend on remembering to mute.
 							</p>
 							<div className="animate-landing-rise flex flex-wrap items-center gap-3 pt-1 [animation-delay:240ms]">
-								<Button size="lg" asChild>
+								<PlayStoreButton />
+								<Button size="lg" variant="outline" asChild>
 									<a href="#how-it-works">See how it works</a>
 								</Button>
 							</div>
@@ -251,10 +253,13 @@ export function LandingPage() {
 			</main>
 
 			<footer className="border-t border-border">
-				<div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-					<p className="text-sm text-muted-foreground">
-						© {new Date().getFullYear()} X-Disturb
-					</p>
+				<div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+					<div className="flex flex-col gap-4 sm:gap-3">
+						<PlayStoreButton variant="outline" />
+						<p className="text-sm text-muted-foreground">
+							© {new Date().getFullYear()} X-Disturb
+						</p>
+					</div>
 					<div className="flex flex-wrap gap-4 text-sm">
 						<Link
 							href="/help-center"
