@@ -21,7 +21,7 @@ export const session = {
       typeof value === "string" ? value : JSON.stringify(value);
     sessionStorage.setItem(key as string, stringValue);
   },
-
+  
   removeItem: <K extends keyof SessionData>(key: K) => {
     if (typeof window === "undefined") return;
     sessionStorage.removeItem(key as string);

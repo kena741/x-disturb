@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,10 +29,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { session } from "@/lib/sessionStorage";
-import { db } from "@/firebase/config";
+import { db, auth } from "@/firebase/config";
 import { useAdminContext } from "@/components/context-provider";
 import ProfileSkeleton from "@/components/dashboard/profile/ProfileSkeleton";
 import { AdminPageContent } from "@/components/admin/admin-layout";
+import { toast } from "react-toastify";
 
 const profileSchema = z.object({
 	firstName: z.string().min(1, "First name is required"),
@@ -67,7 +68,7 @@ export default function ProfilePage() {
 	const [loading, setLoading] = useState(true);
 	const router = useRouter();
 	const { triggerRefetch } = useAdminContext();
-	const id = session?.getItem("userId") || "admin_id";
+	const id = auth?.currentUser?.uid || session?.getItem("userId") || "admin_id";
 
 	const form = useForm<ProfileFormValues>({
 		resolver: zodResolver(profileSchema),
@@ -111,11 +112,18 @@ export default function ProfilePage() {
 	const onSubmit = async (data: ProfileFormValues) => {
 		setSubmitting(true);
 		try {
+			const cleaned = Object.fromEntries(
+				Object.entries(data).filter(([_, v]) => v !== undefined),
+			);
 			const docRef = doc(db, "admin_profile", id);
-			await updateDoc(docRef, data);
+			await setDoc(docRef, cleaned, { merge: true });
 			triggerRefetch();
-		} catch (err) {
-			console.error("Error updating admin profile:", err);
+			toast.success("Profile saved successfully!");
+		} catch (err: any) {
+			console.error("=== PROFILE SAVE FAILED ===");
+			console.error("Error code:", err?.code);
+			console.error("Error message:", err?.message);
+			toast.error(err?.message || "Failed to save profile. Please try again.");
 		} finally {
 			setSubmitting(false);
 		}
