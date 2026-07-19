@@ -115,6 +115,7 @@ export default function ProfilePage() {
 			const cleaned = Object.fromEntries(
 				Object.entries(data).filter(([_, v]) => v !== undefined),
 			);
+			cleaned.userId = id;
 			const docRef = doc(db, "admin_profile", id);
 			await setDoc(docRef, cleaned, { merge: true });
 			triggerRefetch();

@@ -19,7 +19,6 @@ import { getUserStatusTone } from "@/lib/admin-status-badge";
 import { collection, query, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { useEffect, useState } from "react";
-import { useFetchUsers, type User } from "@/app/api/user-management-api";
 
 interface ZoneRegistration {
 	id: string;
@@ -37,10 +36,18 @@ interface ZoneRegistration {
 	address?: string;
 }
 
+interface AdminProfile {
+	id: string;
+	firstName: string;
+	lastName: string;
+	email: string;
+	userId: string;
+}
+
 export default function ZoneRegistrations() {
 	const [zones, setZones] = useState<ZoneRegistration[]>([]);
 	const [loading, setLoading] = useState(true);
-	const { users } = useFetchUsers();
+	const [profiles, setProfiles] = useState<AdminProfile[]>([]);
 
 	useEffect(() => {
 		const zonesQuery = query(collection(db, "silent_zones"));
@@ -62,9 +69,28 @@ export default function ZoneRegistrations() {
 		return () => unsubscribe();
 	}, []);
 
-	const userMap = new Map<string, User>();
-	for (const user of users) {
-		userMap.set(user.id, user);
+	useEffect(() => {
+		const profilesQuery = query(collection(db, "admin_profile"));
+		const unsubscribe = onSnapshot(
+			profilesQuery,
+			(snapshot) => {
+				const profilesData = snapshot.docs.map((doc) => ({
+					id: doc.id,
+					...doc.data(),
+				})) as AdminProfile[];
+				setProfiles(profilesData);
+			},
+			(err) => {
+				console.error("Error fetching profiles:", err);
+			},
+		);
+		return () => unsubscribe();
+	}, []);
+
+	const profileMap = new Map<string, AdminProfile>();
+	for (const p of profiles) {
+		profileMap.set(p.id, p);
+		profileMap.set(p.userId, p);
 	}
 
 	const formatDate = (timestamp?: Timestamp) => {
@@ -100,7 +126,7 @@ export default function ZoneRegistrations() {
 						<AdminLoadingRow columns={7} />
 					) : zones.length > 0 ? (
 						zones.map((zone) => {
-							const admin = zone.adminID ? userMap.get(zone.adminID) : null;
+							const admin = zone.adminID ? profileMap.get(zone.adminID) : null;
 							return (
 								<TableRow key={zone.id} className="group">
 									<TableCell className="font-medium">
@@ -110,7 +136,7 @@ export default function ZoneRegistrations() {
 										{zone.type}
 									</TableCell>
 									<TableCell>
-										{admin?.displayName || admin?.name || zone.adminID || "Unknown"}
+										{admin ? `${admin.firstName} ${admin.lastName}` : zone.adminID || "Unknown"}
 									</TableCell>
 									<TableCell className="text-muted-foreground">
 										{admin?.email || "—"}
