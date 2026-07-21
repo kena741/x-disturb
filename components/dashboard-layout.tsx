@@ -7,6 +7,8 @@ import { AdminShellSkeleton } from "@/components/admin/admin-shell-skeleton";
 import { useAuthChecker } from "@/hooks/useAuthChecker";
 import { SidebarProvider, SidebarInset } from "./ui/sidebar";
 import MobileSidebar from "./shared/mobileSidebar";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { loading } = useAuthChecker();
@@ -28,6 +30,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </SidebarInset>
           </div>
         </div>
+        <ToastContainer position="top-right" autoClose={3000} />
       </SidebarProvider>
     </AdminPageHeaderProvider>
   );

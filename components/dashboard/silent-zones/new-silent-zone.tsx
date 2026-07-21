@@ -25,11 +25,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 
-import { db } from "@/firebase/config";
+import { db, auth } from "@/firebase/config";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { session } from "@/lib/sessionStorage";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import HereMap from "./HereMap";
 import AddressField from "./AddressSuggestion";
 
@@ -58,12 +60,13 @@ const formSchema = z.object({
 export default function CreateSilentZone() {
 	const router = useRouter();
 	const [isAdding, setIsAdding] = useState(false);
+	const [submitError, setSubmitError] = useState<string | null>(null);
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			address: "",
-			adminID: session?.getItem("userId") || "admin_user",
+			adminID: auth?.currentUser?.uid || session?.getItem("userId") || "admin_user",
 			center: {
 				latitude: "0",
 				longitude: "0",
@@ -79,7 +82,8 @@ export default function CreateSilentZone() {
 	const radius = form.watch("radius");
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
-		console.log({ values });
+		setSubmitError(null);
+		console.log("Submitting zone with values:", JSON.stringify(values, null, 2));
 		setIsAdding(true);
 		try {
 			const docRef = await addDoc(collection(db, "silent_zones"), {
@@ -92,15 +96,24 @@ export default function CreateSilentZone() {
 				updatedAt: serverTimestamp(),
 			});
 			console.log("Document written with ID:", docRef.id);
-			router.push("/dashboard/silent-zones");
-		} catch (error) {
-			console.error("Error adding document to silent_zones:", error);
-			form.setError("root", {
-				type: "manual",
-				message: "Failed to create silent zone. Please try again.",
-			});
+			toast.success("Silent zone created successfully!");
+			setTimeout(() => router.push("/dashboard/silent-zones"), 1000);
+		} catch (error: any) {
+			console.error("=== ZONE CREATION FAILED ===");
+			console.error("Error code:", error?.code);
+			console.error("Error message:", error?.message);
+			console.error("Full error:", error);
+			const msg = error?.message || "Failed to create silent zone.";
+			setSubmitError(msg);
+			toast.error(msg);
+			setIsAdding(false);
 		}
-		setIsAdding(false);
+	}
+
+	function onInvalid(errors: any) {
+		console.error("=== FORM VALIDATION FAILED ===");
+		console.error("Validation errors:", JSON.stringify(errors, null, 2));
+		toast.error("Please fix the form errors before submitting.");
 	}
 
 	return (
@@ -108,7 +121,12 @@ export default function CreateSilentZone() {
 			<Card className="border-border shadow-sm">
 				<CardContent className="p-6">
 					<Form {...form}>
-						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+						<form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
+							{submitError && (
+								<Alert variant="destructive">
+									<AlertDescription>{submitError}</AlertDescription>
+								</Alert>
+							)}
 							{/* Zone Name */}
 							<FormField
 								control={form.control}

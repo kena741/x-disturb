@@ -1,82 +1,77 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // USERS COLLECTION
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Users: own-doc writes; authenticated reads so phone login can resolve
+    // existing accounts (get by id + single-doc phone queries).
     match /users/{userId} {
-      allow read: if request.auth != null;
-      // Enforce schema for users
-      allow write: if request.auth != null 
-                   && request.resource.data.keys().hasAll(['email', 'displayName', 'role'])
-                   && request.resource.data.email is string
-                   && request.resource.data.displayName is string;
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+
+      match /notifications/{notificationId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
-    // ADMIN PROFILE COLLECTION
+    // Admin profile: any signed-in user can read/write their own profile.
     match /admin_profile/{adminId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isSignedIn();
     }
 
-    // ZONE ACTIVITIES COLLECTION
-    match /zone_activities/{activityId} {
-      allow read: if request.auth != null;
-      // Enforce schema for zone activities based on your types/zone-activity.ts
-      allow write: if request.auth != null 
-                   && request.resource.data.keys().hasAll(['userID', 'userName', 'zoneID', 'zoneName', 'activity', 'timestamp', 'coordinates'])
-                   && request.resource.data.activity in ['Entered Zone', 'Exited Zone', 'Inside Zone']
-                   && request.resource.data.coordinates.keys().hasAll(['latitude', 'longitude'])
-                   && request.resource.data.coordinates.latitude is number
-                   && request.resource.data.coordinates.longitude is number;
+    // Phone → userId index for O(1) registered-user checks.
+    match /phone_index/{phone} {
+      allow get: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if false;
     }
 
-    // METRICS / REVENUES COLLECTION
-    match /revenues/{revenueId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-                   && request.resource.data.keys().hasAll(['categoryName', 'revenue', 'targetRevenue'])
-                   && request.resource.data.revenue is number
-                   && request.resource.data.targetRevenue is number;
+    match /referral_codes/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && request.query.limit <= 1;
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
     }
 
-    // ENTRIES / TREND DATA
-    match /entries_trend/{entryId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-                   && request.resource.data.keys().hasAll(['date', 'count'])
-                   && request.resource.data.count is number;
+    match /referrals/{id} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
     }
 
-    match /referral_codes/{referralId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null; // add schema enforcement here if needed
-    }
-
-    // SILENT ZONES COLLECTION
-    match /silent_zones/{zoneId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // PAYMENTS COLLECTION
-    match /payments/{paymentId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null; // Optional: restrict write if needed
-    }
-
-    // TRANSACTIONS COLLECTION
-    match /transactions/{transactionId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // SUBSCRIPTION PLANS COLLECTION
+    // Catalog data: any signed-in user can read active plans / zones.
     match /subscription_plans/{planId} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null
-                   && request.resource.data.keys().hasAll(['category', 'currency', 'durationLabel', 'durationMonths', 'isActive', 'price', 'sortOrder'])
-                   && request.resource.data.price is number
-                   && request.resource.data.durationMonths is number
-                   && request.resource.data.isActive is bool;
-      allow delete: if request.auth != null;
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /silent_zones/{zoneId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Payment intents are created/updated by the backend; clients only watch
+    // their own pending → verified/failed status.
+    match /payment_intents/{txRef} {
+      allow read: if isSignedIn()
+        && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /zone_activities/{activityId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if false;
     }
   }
 }

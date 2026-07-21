@@ -8,6 +8,7 @@ import {
   Bell,
   KeyIcon,
   CreditCard,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -56,7 +57,10 @@ export const adminNavGroups: AdminNavGroup[] = [
   },
   {
     label: "Insights",
-    items: [{ label: "Reports", icon: FileText, path: "/dashboard/reports" }],
+    items: [
+      { label: "Reports", icon: FileText, path: "/dashboard/reports" },
+      { label: "Analytics", icon: BarChart3, path: "/dashboard/analytics" },
+    ],
   },
   {
     label: "Engagement",
